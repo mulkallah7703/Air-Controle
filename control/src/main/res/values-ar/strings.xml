@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="air_control_notification_channel">Air Controle</string>
+    <string name="air_control_notification_title">Air Controle</string>
+    <string name="air_control_notification_text">التحكم الجوي مفعّل. يمكنك مغادرة التطبيق — المؤشر يتابع يدك.</string>
+    <string name="air_control_notification_stop">إيقاف</string>
+</resources>

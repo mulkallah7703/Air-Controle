@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Air Controle</string>
+    <string name="brand_air_os">AIR OS</string>
+    <string name="tagline">Your hands are your controller</string>
+    <string name="welcome_title">Welcome to Air Controle</string>
+    <string name="welcome_body">Hands-free phone control with the camera. A white cursor follows your fingertip. AIR OS power, Arabic-first, built for everyday gestures.</string>
+    <string name="action_get_started">Get started</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="action_grant">Allow</string>
+    <string name="action_skip_for_now">Skip for now</string>
+    <string name="action_done">Enter Air Controle</string>
+    <string name="action_back">Back</string>
+
+    <string name="onboarding_camera_title">Camera</string>
+    <string name="onboarding_camera_body">Air Controle watches your hand — not your face — to move the cursor and read gestures. The feed stays on-device.</string>
+    <string name="onboarding_accessibility_title">Accessibility</string>
+    <string name="onboarding_accessibility_body">The Accessibility Service performs Home, Back, scroll, and tap at the cursor. Android requires you to turn this on yourself. You can disable it any time.</string>
+    <string name="onboarding_overlay_title">Overlay cursor</string>
+    <string name="onboarding_overlay_body">A white fingertip cursor draws over other apps so you can see where a gesture will land.</string>
+    <string name="onboarding_notifications_title">Notifications</string>
+    <string name="onboarding_notifications_body">A persistent notification is how Android lets Air Control keep running after you leave the app. It is also the honest off switch.</string>
+    <string name="onboarding_ready_title">You are ready</string>
+    <string name="onboarding_ready_body">Turn Air Control on from Home. Point to move the cursor. Pinch to click. Palm to pause. Fist for Back. Peace for Home.</string>
+    <string name="permission_granted">Allowed</string>
+    <string name="permission_needed">Needed</string>
+
+    <string name="home_quick_access">Quick Access</string>
+    <string name="home_add_app">Add app</string>
+    <string name="home_air_control">Air Control</string>
+    <string name="home_on">On</string>
+    <string name="home_off">Off</string>
+    <string name="home_paused">Paused</string>
+    <string name="home_status">Status</string>
+    <string name="home_missing_permissions">Finish onboarding permissions before turning Air Control on.</string>
+    <string name="home_accessibility_hint">Accessibility is off — cursor can still move, but taps and system actions will not fire.</string>
+    <string name="home_running_hint">Air Control stays on after you leave this screen. Android may still pause the camera if the system kills background work.</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_training">Gesture training</string>
+    <string name="home_customize">Customize gestures</string>
+    <string name="home_last_gesture">Last gesture</string>
+    <string name="home_not_installed">%1$s is not installed</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_ar">العربية</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_cursor">Cursor</string>
+    <string name="settings_cursor_size">Cursor size</string>
+    <string name="settings_cursor_pulse">Pulse on gesture</string>
+    <string name="settings_kill_switch">Kill switch</string>
+    <string name="settings_kill_switch_body">Immediately stop Air Control, hide the cursor, and release the camera. This cannot force-close other apps on stock Android.</string>
+    <string name="settings_kill_now">Stop Air Control now</string>
+    <string name="settings_purchase">Unlock</string>
+    <string name="settings_purchase_body">Air Controle is planned as a one-time purchase for 29.99 SAR. Billing is not wired in this build — this is a note only.</string>
+    <string name="settings_purchase_price">29.99 SAR · one time</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_limits_title">Honest Android limits</string>
+    <string name="settings_limits_body">Stock Android will not let any app fully shut the phone down, survive every OEM battery killer, or inject input without Accessibility. Air Controle asks only for what it needs and tells you when the system is in the way.</string>
+
+    <string name="coming_soon_training_title">Gesture training</string>
+    <string name="coming_soon_training_body">Guided practice for click, scroll, swipe, palm, fist, and peace will land in a later build. For now the default gestures are live.</string>
+    <string name="coming_soon_customize_title">Full customization</string>
+    <string name="coming_soon_customize_body">Remapping gestures and per-app profiles is planned. This screen is a stub so the path is already in the app.</string>
+    <string name="coming_soon_later">Later</string>
+
+    <string name="picker_title">Add an app</string>
+    <string name="picker_empty">No launchable apps found.</string>
+    <string name="picker_added">Added to Quick Access</string>
+
+    <string name="gesture_click">Click</string>
+    <string name="gesture_scroll_up">Scroll up</string>
+    <string name="gesture_scroll_down">Scroll down</string>
+    <string name="gesture_swipe_left">Swipe left</string>
+    <string name="gesture_swipe_right">Swipe right</string>
+    <string name="gesture_palm">Palm pause</string>
+    <string name="gesture_fist">Fist back</string>
+    <string name="gesture_peace">Peace home</string>
+    <string name="gesture_point">Point + hold</string>
+
+    <string name="state_idle">Idle</string>
+    <string name="state_hand_detected">Hand detected</string>
+    <string name="state_tracking">Tracking</string>
+    <string name="state_gesture_recognized">Gesture recognized</string>
+    <string name="state_action">Action</string>
+    <string name="state_cooldown">Cooldown</string>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_label">Air Controle</string>
+    <string name="accessibility_service_description">يستخدم Air Controle خدمة إمكانية الوصول لتنفيذ الرئيسية، الرجوع، التمرير، والضغط عند المؤشر الأبيض عندما يكون التحكم مفعّلًا. تبقى أنت المتحكم — يمكنك إيقاف الخدمة في أي وقت من إعدادات النظام.</string>
+</resources>

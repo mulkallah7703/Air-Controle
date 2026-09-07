@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="air_control_notification_channel">Air Controle</string>
+    <string name="air_control_notification_title">Air Controle</string>
+    <string name="air_control_notification_text">Air Control is on. Leave the app — the cursor can keep following your hand.</string>
+    <string name="air_control_notification_stop">Turn off</string>
+</resources>
