@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Air Controle</string>
+    <string name="brand_air_os">AIR OS</string>
+    <string name="tagline">يداك هما جهاز التحكم</string>
+    <string name="welcome_title">مرحبًا بك في Air Controle</string>
+    <string name="welcome_body">تحكم بالهاتف دون لمس عبر الكاميرا. مؤشر أبيض يتابع طرف إصبعك. طاقة AIR OS، العربية أولًا، لإيماءات يومية.</string>
+    <string name="action_get_started">ابدأ</string>
+    <string name="action_continue">متابعة</string>
+    <string name="action_open_settings">فتح الإعدادات</string>
+    <string name="action_grant">سماح</string>
+    <string name="action_skip_for_now">تخطي الآن</string>
+    <string name="action_done">ادخل إلى Air Controle</string>
+    <string name="action_back">رجوع</string>
+
+    <string name="onboarding_camera_title">الكاميرا</string>
+    <string name="onboarding_camera_body">يراقب Air Controle يدك — وليس وجهك — لتحريك المؤشر وقراءة الإيماءات. المعالجة تتم على الجهاز.</string>
+    <string name="onboarding_accessibility_title">إمكانية الوصول</string>
+    <string name="onboarding_accessibility_body">تنفّذ خدمة إمكانية الوصول أوامر الرئيسية والرجوع والتمرير والضغط عند المؤشر. أندرويد يطلب منك تفعيلها بنفسك، ويمكنك إيقافها في أي وقت.</string>
+    <string name="onboarding_overlay_title">مؤشر الطبقة</string>
+    <string name="onboarding_overlay_body">يُرسم مؤشر أبيض فوق التطبيقات الأخرى لترى أين ستقع الإيماءة.</string>
+    <string name="onboarding_notifications_title">الإشعارات</string>
+    <string name="onboarding_notifications_body">الإشعار المستمر هو طريقة أندرويد للسماح لـ Air Control بالبقاء بعد مغادرة التطبيق. وهو أيضًا زر الإيقاف الصريح.</string>
+    <string name="onboarding_ready_title">أنت جاهز</string>
+    <string name="onboarding_ready_body">فعّل Air Control من الرئيسية. أشر لتحريك المؤشر. اضغط بإصبعيك للنقر. الكف للإيقاف المؤقت. القبضة للرجوع. علامة النصر للرئيسية.</string>
+    <string name="permission_granted">مسموح</string>
+    <string name="permission_needed">مطلوب</string>
+
+    <string name="home_quick_access">وصول سريع</string>
+    <string name="home_add_app">إضافة تطبيق</string>
+    <string name="home_air_control">Air Control</string>
+    <string name="home_on">تشغيل</string>
+    <string name="home_off">إيقاف</string>
+    <string name="home_paused">متوقف مؤقتًا</string>
+    <string name="home_status">الحالة</string>
+    <string name="home_missing_permissions">أكمل أذونات التهيئة قبل تشغيل Air Control.</string>
+    <string name="home_accessibility_hint">إمكانية الوصول غير مفعّلة — يمكن للمؤشر أن يتحرك، لكن النقر وأوامر النظام لن تُنفَّذ.</string>
+    <string name="home_running_hint">يبقى Air Control بعد مغادرة هذه الشاشة. قد يوقف أندرويد الكاميرا إذا قتل النظام العمل في الخلفية.</string>
+    <string name="home_settings">الإعدادات</string>
+    <string name="home_training">تدريب الإيماءات</string>
+    <string name="home_customize">تخصيص الإيماءات</string>
+    <string name="home_last_gesture">آخر إيماءة</string>
+    <string name="home_not_installed">%1$s غير مثبّت</string>
+
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_language">اللغة</string>
+    <string name="settings_language_ar">العربية</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_cursor">المؤشر</string>
+    <string name="settings_cursor_size">حجم المؤشر</string>
+    <string name="settings_cursor_pulse">نبضة عند الإيماءة</string>
+    <string name="settings_kill_switch">قاطع الطوارئ</string>
+    <string name="settings_kill_switch_body">يوقف Air Control فورًا، يخفي المؤشر، ويحرّر الكاميرا. لا يمكنه إغلاق التطبيقات الأخرى على أجهزة أندرويد العادية.</string>
+    <string name="settings_kill_now">أوقف Air Control الآن</string>
+    <string name="settings_purchase">الترخيص</string>
+    <string name="settings_purchase_body">يُخطَّط لـ Air Controle كشراء لمرة واحدة بسعر 29.99 ر.س. الفوترة غير موصولة في هذا الإصدار — هذه ملاحظة فقط.</string>
+    <string name="settings_purchase_price">29.99 ر.س · مرة واحدة</string>
+    <string name="settings_version">الإصدار %1$s</string>
+    <string name="settings_limits_title">حدود أندرويد بصراحة</string>
+    <string name="settings_limits_body">أندرويد العادي لا يسمح لأي تطبيق بإيقاف الهاتف بالكامل، أو النجاة من كل قاتل بطارية لدى الشركات، أو إدخال اللمس دون إمكانية الوصول. يطلب Air Controle ما يحتاجه فقط ويخبرك عندما يقف النظام في الطريق.</string>
+
+    <string name="coming_soon_training_title">تدريب الإيماءات</string>
+    <string name="coming_soon_training_body">سيأتي لاحقًا تمرين موجّه للنقر والتمرير والسحب والكف والقبضة وعلامة النصر. الإيماءات الافتراضية تعمل الآن.</string>
+    <string name="coming_soon_customize_title">تخصيص كامل</string>
+    <string name="coming_soon_customize_body">إعادة تعيين الإيماءات وملفات لكل تطبيق مخطط لها. هذه الشاشة عنصر نائب ليكون المسار موجودًا في التطبيق.</string>
+    <string name="coming_soon_later">لاحقًا</string>
+
+    <string name="picker_title">أضف تطبيقًا</string>
+    <string name="picker_empty">لا توجد تطبيقات قابلة للتشغيل.</string>
+    <string name="picker_added">أُضيف إلى الوصول السريع</string>
+
+    <string name="gesture_click">نقر</string>
+    <string name="gesture_scroll_up">تمرير لأعلى</string>
+    <string name="gesture_scroll_down">تمرير لأسفل</string>
+    <string name="gesture_swipe_left">سحب لليسار</string>
+    <string name="gesture_swipe_right">سحب لليمين</string>
+    <string name="gesture_palm">إيقاف مؤقت بالكف</string>
+    <string name="gesture_fist">رجوع بالقبضة</string>
+    <string name="gesture_peace">الرئيسية بعلامة النصر</string>
+    <string name="gesture_point">إشارة + تثبيت</string>
+
+    <string name="state_idle">خامل</string>
+    <string name="state_hand_detected">تم رصد اليد</string>
+    <string name="state_tracking">تتبّع</string>
+    <string name="state_gesture_recognized">تم التعرّف على إيماءة</string>
+    <string name="state_action">تنفيذ</string>
+    <string name="state_cooldown">تهدئة</string>
+</resources>

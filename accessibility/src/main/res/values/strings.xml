@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_label">Air Controle</string>
+    <string name="accessibility_service_description">Air Controle uses Accessibility to perform Home, Back, scroll, and tap at the white cursor when Air Control is on. You stay in charge — turn the service off any time in system settings.</string>
+</resources>
