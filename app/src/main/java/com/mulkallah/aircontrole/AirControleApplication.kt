@@ -11,13 +11,11 @@ import kotlinx.coroutines.launch
 
 class AirControleApplication : Application() {
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    lateinit var preferences: AirControlePreferences
-        private set
+    val preferences: AirControlePreferences by lazy { AirControlePreferences(this) }
 
     override fun onCreate() {
         super.onCreate()
         instance = this
-        preferences = AirControlePreferences(this)
         applicationScope.launch {
             LocaleController.apply(preferences.languageTag.first())
         }

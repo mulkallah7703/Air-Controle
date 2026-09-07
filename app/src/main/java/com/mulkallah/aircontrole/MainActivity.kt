@@ -41,11 +41,7 @@ class MainActivity : AppCompatActivity() {
 
 private object AirControlePreferencesHolder {
     fun languageTag(context: Context): String {
-        val app = context.applicationContext as? AirControleApplication
-        return if (app != null && app::preferences.isInitialized) {
-            runBlocking { app.preferences.languageTagOnce() }
-        } else {
-            "ar"
-        }
+        val app = context.applicationContext as? AirControleApplication ?: return "ar"
+        return runBlocking { app.preferences.languageTagOnce() }
     }
 }

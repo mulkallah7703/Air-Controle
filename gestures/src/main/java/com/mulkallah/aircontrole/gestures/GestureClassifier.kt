@@ -11,7 +11,7 @@ class GestureClassifier(
 ) {
     fun classify(frame: HandFrame): Classification {
         if (!frame.isValid) {
-            return Classification(HandPose.UNKNOWN, 0f, 0f)
+            return Classification(HandPose.UNKNOWN, 0f)
         }
         val landmarks = frame.landmarks
         val index = isExtended(landmarks, HandFrame.INDEX_TIP, HandFrame.INDEX_PIP, HandFrame.INDEX_MCP)
