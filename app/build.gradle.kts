@@ -4,6 +4,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = java.util.Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+}
+
 android {
     namespace = "com.mulkallah.aircontrole"
     compileSdk = 35
@@ -12,9 +18,20 @@ android {
         applicationId = "com.mulkallah.aircontrole"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
         vectorDrawables.useSupportLibrary = true
+    }
+
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(checkNotNull(keystoreProperties["storeFile"]).toString())
+                storePassword = checkNotNull(keystoreProperties["storePassword"]).toString()
+                keyAlias = checkNotNull(keystoreProperties["keyAlias"]).toString()
+                keyPassword = checkNotNull(keystoreProperties["keyPassword"]).toString()
+            }
+        }
     }
 
     buildTypes {
@@ -24,6 +41,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
