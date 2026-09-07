@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -66,11 +68,16 @@ fun WelcomeScreen(onStart: () -> Unit) {
             .fillMaxSize()
             .background(AirNavy)
             .padding(28.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(24.dp))
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(24.dp))
             Box(
                 modifier = Modifier
                     .size(96.dp)
@@ -111,6 +118,7 @@ fun WelcomeScreen(onStart: () -> Unit) {
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(Modifier.height(24.dp))
         }
         Button(
             onClick = onStart,
@@ -176,9 +184,13 @@ fun OnboardingScreen(
             .fillMaxSize()
             .background(AirNavy)
             .padding(24.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+        ) {
             TextButton(onClick = onBack) { Text(stringResource(R.string.action_back)) }
             Spacer(Modifier.height(12.dp))
             Icon(icon, contentDescription = null, tint = AirCyan, modifier = Modifier.size(40.dp))
@@ -192,6 +204,7 @@ fun OnboardingScreen(
             )
             Spacer(Modifier.height(20.dp))
             StatusChip(granted)
+            Spacer(Modifier.height(16.dp))
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             when (page) {
@@ -250,9 +263,13 @@ fun ReadyScreen(
             .fillMaxSize()
             .background(AirNavy)
             .padding(28.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+        ) {
             Text(stringResource(R.string.onboarding_ready_title), style = MaterialTheme.typography.displaySmall)
             Spacer(Modifier.height(16.dp))
             Text(
@@ -260,6 +277,7 @@ fun ReadyScreen(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(Modifier.height(16.dp))
         }
         Button(
             onClick = {
