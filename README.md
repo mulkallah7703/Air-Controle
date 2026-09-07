@@ -59,12 +59,31 @@ Requirements:
 
 ```bash
 ./gradlew assembleDebug
+./gradlew assembleRelease
 ./gradlew :gestures:test
 ```
 
-Install the debug APK from `app/build/outputs/apk/debug/` or use **Run** in Android Studio.
+Install the debug APK from `app/build/outputs/apk/debug/` or use **Run** in Android Studio. For sideload testing, prefer the **release-signed** APK from `app/build/outputs/apk/release/` (see signing below).
 
 Open the project as **Air Controle** (`settings.gradle.kts` `rootProject.name`).
+
+### Release signing (DEV/TEST)
+
+The keystore is **not** in git. Generate a local upload key, then build release:
+
+```bash
+cp keystore.properties.example keystore.properties
+./scripts/generate-upload-keystore.sh
+./gradlew assembleRelease
+```
+
+`aircontrole-upload.jks` and `keystore.properties` are gitignored. Treat this key as **DEV/TEST only** — replace it before any Play Console production upload (Play App Signing).
+
+### Play Protect
+
+A release-signed APK is less likely to trip Play Protect than a debug-signed sideload, but **Play Protect may still warn** for apps that use Accessibility and overlay, especially when installed outside Play. That is not fixed by turning Play Protect off.
+
+The durable path is **Play Console → Internal testing** (or another Play track) so Protect sees a Play-distributed signing identity. Uninstall any previous debug-signed Air Controle build before installing a release-signed APK — Android will reject the upgrade (different signature).
 
 ### Permissions
 
@@ -128,10 +147,29 @@ Kotlin, Jetpack Compose, Material 3, CameraX, MediaPipe Hands (`tasks-vision`), 
 
 ```bash
 ./gradlew assembleDebug
+./gradlew assembleRelease
 ./gradlew :gestures:test
 ```
 
 اسم المشروع في Gradle هو **Air Controle**. اللغة الافتراضية العربية مع اتجاه من اليمين إلى اليسار.
+
+### توقيع الإصدار (تطوير/اختبار)
+
+ملف المفاتيح **ليس** في git. أنشئ مفتاحًا محليًا ثم ابنِ نسخة الإصدار:
+
+```bash
+cp keystore.properties.example keystore.properties
+./scripts/generate-upload-keystore.sh
+./gradlew assembleRelease
+```
+
+`aircontrole-upload.jks` و`keystore.properties` مستبعدان من git. هذا المفتاح **للتطوير/الاختبار فقط** — استبدله قبل الرفع الإنتاجي إلى Play.
+
+### حماية Google Play
+
+توقيع الإصدار يقلّل احتمال حظر Play Protect مقارنة بتوقيع debug، لكن **قد يظهر تحذير بعد** لأن التطبيق يستخدم إمكانية الوصول والطبقة، خاصة عند التثبيت خارج Play. إيقاف حماية Play ليس الحل المطلوب.
+
+المسار الثابت: **Play Console → الاختبار الداخلي**. أزل أي نسخة debug سابقة قبل تثبيت APK موقّع للإصدار — أندرويد يرفض الترقية عند اختلاف التوقيع.
 
 ### الأذونات وحدود أندرويد
 
