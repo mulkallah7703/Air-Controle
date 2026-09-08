@@ -28,7 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Card
@@ -264,7 +264,7 @@ fun HomeScreen(
             }
 
             TextButton(onClick = onGestureGuide) {
-                Icon(Icons.Outlined.MenuBook, contentDescription = null)
+                Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
                 Text(stringResource(R.string.home_guide), modifier = Modifier.padding(start = 8.dp))
             }
             Spacer(Modifier.height(24.dp))
