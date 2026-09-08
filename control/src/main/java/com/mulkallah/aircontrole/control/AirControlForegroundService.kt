@@ -123,6 +123,14 @@ class AirControlForegroundService : LifecycleService() {
                     watchForFrames(camera)
                     return
                 }
+                val existing = AirControlBridge.statusMessage.value
+                if (existing == PipelineStatus.MODEL_MISSING ||
+                    existing == PipelineStatus.LANDMARKER_FAILED ||
+                    existing == PipelineStatus.CAMERA_PERMISSION
+                ) {
+                    AirControleLog.e("camera.start aborted token=$existing")
+                    return
+                }
                 lastError = IllegalStateException(PipelineStatus.CAMERA_START_FAILED)
                 AirControleLog.e("camera.start attempt=${attempt + 1} finished unbound")
             } catch (error: Throwable) {
