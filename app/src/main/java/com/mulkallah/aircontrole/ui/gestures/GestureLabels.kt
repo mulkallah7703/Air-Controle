@@ -1,10 +1,10 @@
 package com.mulkallah.aircontrole.ui.gestures
 
 import com.mulkallah.aircontrole.R
-import com.mulkallah.aircontrole.core.model.GestureAction
 import com.mulkallah.aircontrole.core.model.GestureMappingCatalog
 
 fun gestureTitleRes(key: String): Int = when (key) {
+    GestureMappingCatalog.HAND_START -> R.string.gesture_hand_start_title
     GestureMappingCatalog.CLICK -> R.string.gesture_click_title
     GestureMappingCatalog.SCROLL_UP -> R.string.gesture_scroll_up_title
     GestureMappingCatalog.SCROLL_DOWN -> R.string.gesture_scroll_down_title
@@ -17,20 +17,22 @@ fun gestureTitleRes(key: String): Int = when (key) {
     else -> R.string.gesture_point
 }
 
-fun gestureHowRes(key: String): Int = when (key) {
-    GestureMappingCatalog.CLICK -> R.string.training_how_click
-    GestureMappingCatalog.SCROLL_UP -> R.string.training_how_scroll_up
-    GestureMappingCatalog.SCROLL_DOWN -> R.string.training_how_scroll_down
-    GestureMappingCatalog.SWIPE_LEFT -> R.string.training_how_swipe_left
-    GestureMappingCatalog.SWIPE_RIGHT -> R.string.training_how_swipe_right
-    GestureMappingCatalog.PALM_PAUSE -> R.string.training_how_palm
-    GestureMappingCatalog.FIST_BACK -> R.string.training_how_fist
-    GestureMappingCatalog.PEACE_HOME -> R.string.training_how_peace
-    GestureMappingCatalog.POINT_MOVE -> R.string.training_how_point
-    else -> R.string.training_how_point
+fun gestureGuideBodyRes(key: String): Int = when (key) {
+    GestureMappingCatalog.HAND_START -> R.string.guide_hand_start_body
+    GestureMappingCatalog.CLICK -> R.string.guide_click_body
+    GestureMappingCatalog.SCROLL_UP -> R.string.guide_scroll_up_body
+    GestureMappingCatalog.SCROLL_DOWN -> R.string.guide_scroll_down_body
+    GestureMappingCatalog.SWIPE_LEFT -> R.string.guide_swipe_left_body
+    GestureMappingCatalog.SWIPE_RIGHT -> R.string.guide_swipe_right_body
+    GestureMappingCatalog.PALM_PAUSE -> R.string.guide_palm_body
+    GestureMappingCatalog.FIST_BACK -> R.string.guide_fist_body
+    GestureMappingCatalog.PEACE_HOME -> R.string.guide_peace_body
+    GestureMappingCatalog.POINT_MOVE -> R.string.guide_point_body
+    else -> R.string.guide_point_body
 }
 
 fun gestureShortRes(key: String): Int = when (key) {
+    GestureMappingCatalog.HAND_START -> R.string.gesture_hand_start
     "CLICK" -> R.string.gesture_click
     "SCROLL_UP" -> R.string.gesture_scroll_up
     "SCROLL_DOWN" -> R.string.gesture_scroll_down
@@ -41,20 +43,6 @@ fun gestureShortRes(key: String): Int = when (key) {
     "PEACE_HOME" -> R.string.gesture_peace
     "POINT_MOVE" -> R.string.gesture_point
     else -> R.string.gesture_point
-}
-
-fun actionLabelRes(action: GestureAction): Int = when (action) {
-    GestureAction.CLICK -> R.string.action_click
-    GestureAction.SCROLL_UP -> R.string.action_scroll_up
-    GestureAction.SCROLL_DOWN -> R.string.action_scroll_down
-    GestureAction.SWIPE_LEFT -> R.string.action_swipe_left
-    GestureAction.SWIPE_RIGHT -> R.string.action_swipe_right
-    GestureAction.BACK -> R.string.action_back_system
-    GestureAction.HOME -> R.string.action_home_system
-    GestureAction.PAUSE -> R.string.action_pause
-    GestureAction.RECENTS -> R.string.action_recents
-    GestureAction.MOVE_CURSOR -> R.string.action_move_cursor
-    GestureAction.NONE -> R.string.action_none
 }
 
 fun machineStateRes(state: String): Int = when (state) {

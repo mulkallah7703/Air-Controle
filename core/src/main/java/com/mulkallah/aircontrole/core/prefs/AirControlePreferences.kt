@@ -10,8 +10,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mulkallah.aircontrole.core.AirControleConstants
-import com.mulkallah.aircontrole.core.model.GestureAction
-import com.mulkallah.aircontrole.core.model.GestureMappingCatalog
 import com.mulkallah.aircontrole.core.model.QuickAccessApp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -30,11 +28,7 @@ class AirControlePreferences(private val context: Context) {
         val cursorSize = floatPreferencesKey("cursor_size")
         val cursorPulse = booleanPreferencesKey("cursor_pulse")
         val extraApps = stringSetPreferencesKey("extra_quick_access_apps")
-        val trainedGestures = stringSetPreferencesKey("trained_gestures")
     }
-
-    private fun gestureActionKey(gestureKey: String) =
-        stringPreferencesKey("gesture_action_$gestureKey")
 
     val languageTag: Flow<String> = context.airControleDataStore.data.map { prefs ->
         prefs[Keys.languageTag] ?: AirControleConstants.DEFAULT_LANGUAGE_TAG
@@ -58,17 +52,6 @@ class AirControlePreferences(private val context: Context) {
 
     val extraApps: Flow<Set<String>> = context.airControleDataStore.data.map { prefs ->
         prefs[Keys.extraApps] ?: emptySet()
-    }
-
-    val gestureActions: Flow<Map<String, GestureAction>> = context.airControleDataStore.data.map { prefs ->
-        val stored = GestureMappingCatalog.gestureKeys.mapNotNull { key ->
-            prefs[gestureActionKey(key)]?.let { key to it }
-        }.toMap()
-        GestureMappingCatalog.resolve(stored)
-    }
-
-    val trainedGestures: Flow<Set<String>> = context.airControleDataStore.data.map { prefs ->
-        prefs[Keys.trainedGestures] ?: emptySet()
     }
 
     suspend fun languageTagOnce(): String = languageTag.first()
@@ -104,35 +87,6 @@ class AirControlePreferences(private val context: Context) {
         context.airControleDataStore.edit { prefs ->
             val current = prefs[Keys.extraApps] ?: emptySet()
             prefs[Keys.extraApps] = current - packageName
-        }
-    }
-
-    suspend fun setGestureAction(gestureKey: String, action: GestureAction) {
-        if (gestureKey !in GestureMappingCatalog.gestureKeys) return
-        context.airControleDataStore.edit { prefs ->
-            prefs[gestureActionKey(gestureKey)] = action.name
-        }
-    }
-
-    suspend fun resetGestureActions() {
-        context.airControleDataStore.edit { prefs ->
-            GestureMappingCatalog.gestureKeys.forEach { key ->
-                prefs.remove(gestureActionKey(key))
-            }
-        }
-    }
-
-    suspend fun markGestureTrained(gestureKey: String) {
-        if (gestureKey !in GestureMappingCatalog.gestureKeys) return
-        context.airControleDataStore.edit { prefs ->
-            val current = prefs[Keys.trainedGestures] ?: emptySet()
-            prefs[Keys.trainedGestures] = current + gestureKey
-        }
-    }
-
-    suspend fun resetTraining() {
-        context.airControleDataStore.edit { prefs ->
-            prefs.remove(Keys.trainedGestures)
         }
     }
 

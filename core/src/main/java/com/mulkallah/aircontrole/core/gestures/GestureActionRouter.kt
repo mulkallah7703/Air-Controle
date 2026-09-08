@@ -7,8 +7,7 @@ import com.mulkallah.aircontrole.core.model.CursorPosition
 import com.mulkallah.aircontrole.core.model.GestureAction
 
 /**
- * Maps a persisted [GestureAction] to the Accessibility sink (or in-app pause).
- * The gesture engine must call this with the live mapping, not a hardcoded table.
+ * Maps a fixed [GestureAction] to the Accessibility sink (or in-app pause).
  */
 object GestureActionRouter {
     fun dispatch(

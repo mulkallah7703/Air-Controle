@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+
 class GestureStateMachineTest {
 
     @Test
@@ -46,6 +47,37 @@ class GestureStateMachineTest {
         assertTrue(dispatched.shouldDispatch)
         assertEquals(GestureType.CLICK, dispatched.recognized)
         assertEquals(GestureState.COOLDOWN, dispatched.state)
+    }
+
+    @Test
+    fun firstHandShowsCursorAndPulsesSessionStart() {
+        val machine = GestureStateMachine(detectHoldMs = 50L)
+        val frame = HandFrame(baseLandmarks(index = true, middle = true, ring = true, pinky = true), 0L)
+        val first = machine.onFrame(frame)
+        assertEquals(GestureState.HAND_DETECTED, first.state)
+        assertTrue(first.cursor.visible)
+        assertTrue(first.sessionStart)
+        assertTrue(first.pulse)
+        val tracking = machine.onFrame(frame.copy(timestampMs = 60L))
+        assertEquals(GestureState.TRACKING, tracking.state)
+        assertTrue(tracking.cursor.visible)
+    }
+
+    @Test
+    fun openPalmDoesNotPauseImmediatelyOnStart() {
+        val machine = GestureStateMachine(detectHoldMs = 10L, poseHoldMs = 80L, palmPauseArmMs = 400L)
+        var t = 0L
+        fun palm(time: Long) = HandFrame(baseLandmarks(true, true, true, true), time)
+        machine.onFrame(palm(t))
+        t += 20
+        machine.onFrame(palm(t))
+        assertEquals(GestureState.TRACKING, machine.state)
+        t += 120
+        val early = machine.onFrame(palm(t))
+        assertEquals(GestureType.NONE, early.recognized)
+        t += 400
+        val later = machine.onFrame(palm(t))
+        assertEquals(GestureType.PALM_PAUSE, later.recognized)
     }
 
     @Test

@@ -22,9 +22,8 @@ import com.mulkallah.aircontrole.ui.onboarding.OnboardingScreen
 import com.mulkallah.aircontrole.ui.onboarding.ReadyScreen
 import com.mulkallah.aircontrole.ui.onboarding.WelcomeScreen
 import com.mulkallah.aircontrole.ui.picker.AppPickerScreen
-import com.mulkallah.aircontrole.ui.customize.CustomizeGesturesScreen
+import com.mulkallah.aircontrole.ui.guide.GestureGuideScreen
 import com.mulkallah.aircontrole.ui.settings.SettingsScreen
-import com.mulkallah.aircontrole.ui.training.GestureTrainingScreen
 
 @Composable
 fun AirControleApp(preferences: AirControlePreferences) {
@@ -87,8 +86,7 @@ fun AirControleApp(preferences: AirControlePreferences) {
                     HomeScreen(
                         preferences = preferences,
                         onSettings = { navController.navigate(Destinations.Settings) },
-                        onTraining = { navController.navigate(Destinations.Training) },
-                        onCustomize = { navController.navigate(Destinations.Customize) },
+                        onGestureGuide = { navController.navigate(Destinations.GestureGuide) },
                         onAddApp = { navController.navigate(Destinations.AppPicker) },
                     )
                 }
@@ -98,17 +96,8 @@ fun AirControleApp(preferences: AirControlePreferences) {
                         onBack = { navController.popBackStack() },
                     )
                 }
-                composable(Destinations.Training) {
-                    GestureTrainingScreen(
-                        preferences = preferences,
-                        onBack = { navController.popBackStack() },
-                    )
-                }
-                composable(Destinations.Customize) {
-                    CustomizeGesturesScreen(
-                        preferences = preferences,
-                        onBack = { navController.popBackStack() },
-                    )
+                composable(Destinations.GestureGuide) {
+                    GestureGuideScreen(onBack = { navController.popBackStack() })
                 }
                 composable(Destinations.AppPicker) {
                     AppPickerScreen(

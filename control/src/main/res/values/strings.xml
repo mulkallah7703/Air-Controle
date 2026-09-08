@@ -4,4 +4,6 @@
     <string name="air_control_notification_title">Air Controle</string>
     <string name="air_control_notification_text">Air Control is on. Leave the app — the cursor can keep following your hand.</string>
     <string name="air_control_notification_stop">Turn off</string>
+    <string name="overlay_tracking">Air Control tracking</string>
+    <string name="overlay_control_started">Control started</string>
 </resources>

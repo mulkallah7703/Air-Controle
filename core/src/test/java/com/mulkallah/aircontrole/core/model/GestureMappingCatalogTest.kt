@@ -10,30 +10,17 @@ import org.junit.Test
 class GestureMappingCatalogTest {
 
     @Test
-    fun defaultsMatchShippedBehavior() {
-        val resolved = GestureMappingCatalog.resolve(emptyMap())
-        assertEquals(GestureAction.CLICK, resolved[GestureMappingCatalog.CLICK])
-        assertEquals(GestureAction.SCROLL_UP, resolved[GestureMappingCatalog.SCROLL_UP])
-        assertEquals(GestureAction.SCROLL_DOWN, resolved[GestureMappingCatalog.SCROLL_DOWN])
-        assertEquals(GestureAction.BACK, resolved[GestureMappingCatalog.SWIPE_LEFT])
-        assertEquals(GestureAction.HOME, resolved[GestureMappingCatalog.SWIPE_RIGHT])
-        assertEquals(GestureAction.PAUSE, resolved[GestureMappingCatalog.PALM_PAUSE])
-        assertEquals(GestureAction.BACK, resolved[GestureMappingCatalog.FIST_BACK])
-        assertEquals(GestureAction.HOME, resolved[GestureMappingCatalog.PEACE_HOME])
-        assertEquals(GestureAction.MOVE_CURSOR, resolved[GestureMappingCatalog.POINT_MOVE])
-    }
-
-    @Test
-    fun storedOverrideWinsAndUnknownFallsBackToNone() {
-        val resolved = GestureMappingCatalog.resolve(
-            mapOf(
-                GestureMappingCatalog.FIST_BACK to GestureAction.RECENTS.name,
-                GestureMappingCatalog.CLICK to "not_a_real_action",
-            ),
-        )
-        assertEquals(GestureAction.RECENTS, resolved[GestureMappingCatalog.FIST_BACK])
-        assertEquals(GestureAction.NONE, resolved[GestureMappingCatalog.CLICK])
-        assertEquals(GestureAction.PAUSE, resolved[GestureMappingCatalog.PALM_PAUSE])
+    fun defaultsAreUnifiedForEveryone() {
+        assertEquals(GestureAction.CLICK, GestureMappingCatalog.actionFor(GestureMappingCatalog.CLICK))
+        assertEquals(GestureAction.SCROLL_UP, GestureMappingCatalog.actionFor(GestureMappingCatalog.SCROLL_UP))
+        assertEquals(GestureAction.SCROLL_DOWN, GestureMappingCatalog.actionFor(GestureMappingCatalog.SCROLL_DOWN))
+        assertEquals(GestureAction.SWIPE_LEFT, GestureMappingCatalog.actionFor(GestureMappingCatalog.SWIPE_LEFT))
+        assertEquals(GestureAction.SWIPE_RIGHT, GestureMappingCatalog.actionFor(GestureMappingCatalog.SWIPE_RIGHT))
+        assertEquals(GestureAction.PAUSE, GestureMappingCatalog.actionFor(GestureMappingCatalog.PALM_PAUSE))
+        assertEquals(GestureAction.BACK, GestureMappingCatalog.actionFor(GestureMappingCatalog.FIST_BACK))
+        assertEquals(GestureAction.HOME, GestureMappingCatalog.actionFor(GestureMappingCatalog.PEACE_HOME))
+        assertEquals(GestureAction.MOVE_CURSOR, GestureMappingCatalog.actionFor(GestureMappingCatalog.POINT_MOVE))
+        assertEquals(GestureAction.NONE, GestureMappingCatalog.actionFor("unknown"))
     }
 
     @Test
@@ -52,37 +39,31 @@ class GestureMappingCatalogTest {
     }
 
     @Test
-    fun customMappingRoutesToSink() {
+    fun swipeRightRoutesToNextAndSwipeLeftToPrevious() {
         val sink = RecordingSink()
-        val mappings = GestureMappingCatalog.resolve(
-            mapOf(GestureMappingCatalog.PEACE_HOME to GestureAction.RECENTS.name),
-        )
-        val action = GestureMappingCatalog.actionFor(GestureMappingCatalog.PEACE_HOME, mappings)
-        assertEquals(GestureAction.RECENTS, action)
         assertTrue(
             GestureActionRouter.dispatch(
-                action = action,
+                action = GestureMappingCatalog.actionFor(GestureMappingCatalog.SWIPE_RIGHT),
                 sink = sink,
                 cursor = CursorPosition(0.5f, 0.5f),
                 onPause = {},
             ),
         )
-        assertEquals(listOf("recents"), sink.calls)
+        assertTrue(
+            GestureActionRouter.dispatch(
+                action = GestureMappingCatalog.actionFor(GestureMappingCatalog.SWIPE_LEFT),
+                sink = sink,
+                cursor = CursorPosition(0.5f, 0.5f),
+                onPause = {},
+            ),
+        )
+        assertEquals(listOf("swipe:RIGHT", "swipe:LEFT"), sink.calls)
     }
 
     @Test
-    fun trainingCompletionUsesRequiredDetections() {
-        assertFalse(GestureTraining.isComplete(1))
-        assertTrue(GestureTraining.isComplete(GestureTraining.REQUIRED_DETECTIONS))
-        assertEquals(GestureMappingCatalog.CLICK, GestureTraining.nextIncomplete(emptySet()))
-        assertEquals(
-            GestureMappingCatalog.SCROLL_UP,
-            GestureTraining.nextIncomplete(setOf(GestureMappingCatalog.CLICK)),
-        )
-        assertEquals(
-            null,
-            GestureTraining.nextIncomplete(GestureMappingCatalog.gestureKeys.toSet()),
-        )
+    fun guideIncludesStartThenCoreGestures() {
+        assertEquals(GestureMappingCatalog.HAND_START, GestureMappingCatalog.guideKeys.first())
+        assertTrue(GestureMappingCatalog.guideKeys.containsAll(GestureMappingCatalog.gestureKeys))
     }
 
     private class RecordingSink : AirControlBridge.ActionSink {

@@ -12,17 +12,19 @@ import com.mulkallah.aircontrole.core.model.HandFrame
  */
 class GestureStateMachine(
     private val classifier: GestureClassifier = GestureClassifier(),
-    private val detectHoldMs: Long = 80L,
+    private val detectHoldMs: Long = 40L,
     private val poseHoldMs: Long = 280L,
     private val cooldownMs: Long = 450L,
     private val swipeSpeed: Float = 1.15f,
     private val lostHandTimeoutMs: Long = 350L,
+    private val palmPauseArmMs: Long = 700L,
 ) {
     var state: GestureState = GestureState.IDLE
         private set
 
     private var lastSeenMs: Long = 0L
     private var enteredStateMs: Long = 0L
+    private var trackingStartedMs: Long = 0L
     private var holdPose: HandPose = HandPose.UNKNOWN
     private var holdStartedMs: Long = 0L
     private var previousPinchOpen: Boolean = true
@@ -30,11 +32,13 @@ class GestureStateMachine(
     private var lastDispatched: GestureType = GestureType.NONE
     private var pendingDispatch: GestureType = GestureType.NONE
     private var cursor = CursorPosition(0.5f, 0.5f, visible = false)
+    private var sessionAnnounced: Boolean = false
 
     fun reset() {
         state = GestureState.IDLE
         lastSeenMs = 0L
         enteredStateMs = 0L
+        trackingStartedMs = 0L
         holdPose = HandPose.UNKNOWN
         holdStartedMs = 0L
         previousPinchOpen = true
@@ -42,6 +46,7 @@ class GestureStateMachine(
         lastDispatched = GestureType.NONE
         pendingDispatch = GestureType.NONE
         cursor = CursorPosition(0.5f, 0.5f, visible = false)
+        sessionAnnounced = false
     }
 
     fun onLostHand(nowMs: Long): GestureFrameResult {
@@ -83,15 +88,31 @@ class GestureStateMachine(
             GestureState.IDLE -> {
                 if (classification.pose != HandPose.UNKNOWN) {
                     enter(GestureState.HAND_DETECTED, frame.timestampMs)
+                    rememberTip(classification, frame.timestampMs)
+                    return currentResult(
+                        shouldDispatch = false,
+                        recognized = GestureType.NONE,
+                        pulse = true,
+                        sessionStart = true,
+                    )
                 }
             }
             GestureState.HAND_DETECTED -> {
                 if (classification.pose == HandPose.UNKNOWN) {
                     enter(GestureState.IDLE, frame.timestampMs)
+                    sessionAnnounced = false
                 } else if (frame.timestampMs - enteredStateMs >= detectHoldMs) {
                     enter(GestureState.TRACKING, frame.timestampMs)
+                    trackingStartedMs = frame.timestampMs
                     holdPose = classification.pose
                     holdStartedMs = frame.timestampMs
+                    rememberTip(classification, frame.timestampMs)
+                    return currentResult(
+                        shouldDispatch = false,
+                        recognized = GestureType.NONE,
+                        pulse = !sessionAnnounced,
+                        sessionStart = !sessionAnnounced,
+                    )
                 }
             }
             GestureState.TRACKING -> {
@@ -139,6 +160,9 @@ class GestureStateMachine(
 
         return when (classification.pose) {
             HandPose.OPEN_PALM -> {
+                if (trackingStartedMs == 0L || nowMs - trackingStartedMs < palmPauseArmMs) {
+                    return GestureType.NONE
+                }
                 holdStartedMs = nowMs + cooldownMs
                 GestureType.PALM_PAUSE
             }
@@ -165,7 +189,7 @@ class GestureStateMachine(
     }
 
     private fun updateCursor(classification: GestureClassifier.Classification) {
-        val visible = state != GestureState.IDLE && classification.pose != HandPose.UNKNOWN
+        val visible = classification.pose != HandPose.UNKNOWN
         // Front camera is mirrored so a rightward finger move matches screen space.
         val mirroredX = 1f - classification.fingertip.x
         cursor = CursorPosition(
@@ -188,7 +212,11 @@ class GestureStateMachine(
         shouldDispatch: Boolean,
         recognized: GestureType,
         pulse: Boolean,
+        sessionStart: Boolean = false,
     ): GestureFrameResult {
+        if (sessionStart) {
+            sessionAnnounced = true
+        }
         val pose = holdPose
         return GestureFrameResult(
             state = state,
@@ -197,6 +225,7 @@ class GestureStateMachine(
             cursor = cursor,
             pulse = pulse,
             shouldDispatch = shouldDispatch,
+            sessionStart = sessionStart,
         )
     }
 

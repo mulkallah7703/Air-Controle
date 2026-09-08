@@ -2,12 +2,15 @@ package com.mulkallah.aircontrole.ui.picker
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -25,9 +28,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
 import com.mulkallah.aircontrole.R
 import com.mulkallah.aircontrole.core.prefs.AirControlePreferences
 import com.mulkallah.aircontrole.ui.theme.AirNavy
@@ -36,6 +41,7 @@ import kotlinx.coroutines.launch
 data class LaunchableApp(
     val label: String,
     val packageName: String,
+    val icon: Drawable?,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,6 +60,7 @@ fun AppPickerScreen(
                 LaunchableApp(
                     label = it.loadLabel(pm).toString(),
                     packageName = it.activityInfo.packageName,
+                    icon = it.loadIcon(pm),
                 )
             }
             .distinctBy { it.packageName }
@@ -82,6 +89,19 @@ fun AppPickerScreen(
                     ListItem(
                         headlineContent = { Text(app.label) },
                         supportingContent = { Text(app.packageName) },
+                        leadingContent = {
+                            val drawable = app.icon
+                            if (drawable != null) {
+                                val bitmap = remember(app.packageName) {
+                                    drawable.toBitmap(width = 96, height = 96)
+                                }
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = app.label,
+                                    modifier = Modifier.size(40.dp),
+                                )
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
