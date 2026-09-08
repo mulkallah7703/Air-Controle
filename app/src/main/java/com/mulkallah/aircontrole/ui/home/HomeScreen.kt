@@ -2,7 +2,11 @@ package com.mulkallah.aircontrole.ui.home
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.graphics.drawable.Drawable
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -115,6 +119,20 @@ fun HomeScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
+    DisposableEffect(context) {
+        val resolver = context.contentResolver
+        val settingsObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                permissions = PermissionChecker.snapshot(context)
+            }
+        }
+        resolver.registerContentObserver(
+            Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
+            false,
+            settingsObserver,
+        )
+        onDispose { resolver.unregisterContentObserver(settingsObserver) }
+    }
 
     val apps = remember(extras) { preferences.resolveQuickAccess(extras) }
     val visuals = remember(apps) { apps.map { resolveQuickAccessVisual(context.packageManager, it) } }
@@ -197,6 +215,18 @@ fun HomeScreen(
                         text = "${stringResource(R.string.home_status)} · ${stringResource(machineStateRes(machine))}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(
+                            if (permissions.accessibility) {
+                                R.string.home_status_accessibility_on
+                            } else {
+                                R.string.home_status_accessibility_off
+                            },
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (permissions.accessibility) AirOk else AirDanger,
+                        modifier = Modifier.clickable { AccessibilitySettingsLauncher.open(context) },
                     )
                     if (on && tracking && !paused) {
                         Spacer(Modifier.height(8.dp))
@@ -423,7 +453,7 @@ private fun AccessibilityWarning(onClick: () -> Unit) {
         Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = AirDanger)
         Column(Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.home_accessibility_hint),
+                text = stringResource(R.string.home_status_accessibility_off),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(4.dp))

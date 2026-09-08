@@ -44,6 +44,9 @@
     <string name="perm_notifications">الإشعارات</string>
     <string name="perm_status_on">جاهز</string>
     <string name="perm_status_off">مطلوب</string>
+    <string name="perm_status_accessibility_off">مطلوب — غير مفعّل في إعدادات النظام</string>
+    <string name="home_status_accessibility_off">إمكانية الوصول غير مفعّلة — الرجوع / الرئيسية / النقر لن تُنفَّذ. اضغط لتفعيل Air Controle من إعدادات النظام.</string>
+    <string name="home_status_accessibility_on">إمكانية الوصول مفعّلة — يمكن للإيماءات تنفيذ أوامر النظام.</string>
     <string name="home_running_hint">يبقى Air Control بعد مغادرة هذه الشاشة. قد يوقف أندرويد الكاميرا إذا قتل النظام العمل في الخلفية.</string>
     <string name="home_waiting_hand">ارفع كفًا مفتوحًا 👋 أمام الكاميرا الأمامية. يجب أن تغادر الحالة «خامل» ويظهر المؤشر الأبيض.</string>
     <string name="home_pipeline_error_title">تعذّر تشغيل مسار الكاميرا في Air Control</string>

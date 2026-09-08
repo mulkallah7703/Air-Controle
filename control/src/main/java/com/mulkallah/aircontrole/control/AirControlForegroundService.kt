@@ -18,8 +18,11 @@ import com.mulkallah.aircontrole.core.AirControleLog
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge
 import com.mulkallah.aircontrole.core.gestures.GestureActionRouter
 import com.mulkallah.aircontrole.core.model.CursorPosition
+import com.mulkallah.aircontrole.core.model.GestureAction
 import com.mulkallah.aircontrole.core.model.GestureMappingCatalog
 import com.mulkallah.aircontrole.core.model.PipelineStatus
+import com.mulkallah.aircontrole.core.permissions.EnabledAccessibilityServices
+import com.mulkallah.aircontrole.core.permissions.PermissionChecker
 import com.mulkallah.aircontrole.core.prefs.AirControlePreferences
 import com.mulkallah.aircontrole.gestures.GestureState
 import com.mulkallah.aircontrole.gestures.GestureStateMachine
@@ -53,7 +56,13 @@ class AirControlForegroundService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        AirControleLog.i("service start action=${intent?.action} accessibility=${AirControlBridge.accessibilityConnected}")
+        val accessibilitySetting = PermissionChecker.enabledAccessibilityServicesSetting(this)
+        AirControleLog.i(
+            "service start action=${intent?.action} " +
+                "accessibilitySetting=${accessibilitySetting ?: "null"} " +
+                "accessibilityReady=${EnabledAccessibilityServices.isAirControleEnabled(accessibilitySetting)} " +
+                "accessibilityConnected=${AirControlBridge.accessibilityConnected}",
+        )
         when (intent?.action) {
             AirControleConstants.ACTION_STOP, AirControleConstants.ACTION_KILL_SWITCH -> {
                 scope.launch { prefs.setAirControlEnabled(false) }
@@ -189,6 +198,18 @@ class AirControlForegroundService : LifecycleService() {
         }
         val action = GestureMappingCatalog.actionFor(gesture.name)
         val sink = AirControlBridge.actionSink
+        val settingOn = PermissionChecker.hasAccessibility(this)
+        val needsAccessibility = action != GestureAction.PAUSE &&
+            action != GestureAction.MOVE_CURSOR &&
+            action != GestureAction.NONE
+        if (needsAccessibility && (!settingOn || sink == null)) {
+            AirControleLog.w(
+                "action blocked gesture=${gesture.name} action=${action.name} " +
+                    "accessibilityReady=$settingOn connected=${sink?.connected == true} — " +
+                    "enable AirControleAccessibilityService in system settings",
+            )
+            return
+        }
         val cursor = AirControlBridge.cursor.value
         val ok = GestureActionRouter.dispatch(
             action = action,
@@ -198,7 +219,7 @@ class AirControlForegroundService : LifecycleService() {
         )
         AirControleLog.i(
             "action dispatched gesture=${gesture.name} action=${action.name} " +
-                "accessibility=${sink != null} connected=${sink?.connected == true} " +
+                "accessibilityReady=$settingOn connected=${sink?.connected == true} " +
                 "result=$ok cursor=${"%.2f".format(cursor.x)},${"%.2f".format(cursor.y)}",
         )
     }

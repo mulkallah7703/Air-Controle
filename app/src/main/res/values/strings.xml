@@ -44,6 +44,9 @@
     <string name="perm_notifications">Notifications</string>
     <string name="perm_status_on">Ready</string>
     <string name="perm_status_off">Needed</string>
+    <string name="perm_status_accessibility_off">Needed — not enabled in system settings</string>
+    <string name="home_status_accessibility_off">Accessibility is OFF — Back / Home / click will not run. Tap to enable Air Controle in system settings.</string>
+    <string name="home_status_accessibility_on">Accessibility is on — gestures can perform system actions.</string>
     <string name="home_running_hint">Air Control stays on after you leave this screen. Android may still pause the camera if the system kills background work.</string>
     <string name="home_waiting_hand">Raise an open palm 👋 in front of the front camera. Status should leave Idle and a white cursor should appear.</string>
     <string name="home_pipeline_error_title">Air Control could not start the camera pipeline</string>

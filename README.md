@@ -73,11 +73,14 @@ Install the debug APK from `app/build/outputs/apk/debug/` or use **Run** in Andr
 
 On a physical device (Samsung SM-S928B or similar):
 
-1. Allow Camera, Overlay, Notifications, and turn on **Air Controle** in Accessibility.
-2. On Samsung set **Settings → Apps → Air Controle → Battery → Unrestricted**.
-3. Turn **Air Control ON** on Home. Raise an open palm in front of the front camera.
-4. Home status must leave **Idle / خامل** for **Hand detected / Tracking**, and a white cursor must appear.
-5. Fist = Back, peace ✌️ = Home, pinch = click at the cursor.
+1. Allow Camera, Overlay, Notifications, then turn on **Air Controle** in system Accessibility settings (Home Ready is false until this is really on).
+2. Confirm with `adb shell settings get secure enabled_accessibility_services` — it must contain  
+   `com.mulkallah.aircontrole/com.mulkallah.aircontrole.accessibility.AirControleAccessibilityService`  
+   (`null` means the Home checklist must show Accessibility as **Needed**, never Ready).
+3. On Samsung set **Settings → Apps → Air Controle → Battery → Unrestricted**.
+4. Turn **Air Control ON** on Home. Raise an open palm in front of the front camera.
+5. Home status must leave **Idle / خامل** for **Hand detected / Tracking**, and a white cursor must appear.
+6. Fist = Back, peace ✌️ = Home, pinch = click at the cursor — only after Accessibility is actually enabled.
 
 ```bash
 adb logcat -s AirControle:I
@@ -87,7 +90,7 @@ Healthy start looks like:
 
 ```
 service start requested
-service start action=… accessibility=true|false
+service start action=… accessibilitySetting=… accessibilityReady=true|false
 foreground started type=camera
 wake lock acquired
 landmarker ready model=hand_landmarker.task delegate=CPU
