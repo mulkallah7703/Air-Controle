@@ -63,12 +63,15 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.mulkallah.aircontrole.R
 import com.mulkallah.aircontrole.control.AirControlForegroundService
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge
+import com.mulkallah.aircontrole.core.model.PipelineStatus
 import com.mulkallah.aircontrole.core.model.QuickAccessApp
 import com.mulkallah.aircontrole.core.permissions.AccessibilitySettingsLauncher
 import com.mulkallah.aircontrole.core.permissions.PermissionChecker
+import com.mulkallah.aircontrole.core.permissions.PermissionSettingsLauncher
 import com.mulkallah.aircontrole.core.prefs.AirControlePreferences
 import com.mulkallah.aircontrole.ui.gestures.gestureShortRes
 import com.mulkallah.aircontrole.ui.gestures.machineStateRes
+import com.mulkallah.aircontrole.ui.gestures.pipelineErrorRes
 import com.mulkallah.aircontrole.ui.theme.AirCyan
 import com.mulkallah.aircontrole.ui.theme.AirDanger
 import com.mulkallah.aircontrole.ui.theme.AirNavy
@@ -97,12 +100,16 @@ fun HomeScreen(
     val paused by AirControlBridge.paused.collectAsState()
     val machine by AirControlBridge.machineState.collectAsState()
     val lastGesture by AirControlBridge.lastGesture.collectAsState()
+    val pipelineStatus by AirControlBridge.statusMessage.collectAsState()
     var permissions by remember { mutableStateOf(PermissionChecker.snapshot(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner, enabled, running) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 permissions = PermissionChecker.snapshot(context)
+                if (enabled && permissions.readyForAirControl && !running) {
+                    AirControlForegroundService.start(context)
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -202,6 +209,27 @@ fun HomeScreen(
                             color = AirCyan,
                         )
                     }
+                    if (on && !tracking && !paused && !PipelineStatus.isError(pipelineStatus)) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.home_waiting_hand),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AirCyan,
+                        )
+                    }
+                    val errorRes = pipelineErrorRes(pipelineStatus)
+                    if (on && errorRes != null) {
+                        Spacer(Modifier.height(12.dp))
+                        PipelineErrorCard(
+                            message = stringResource(errorRes),
+                            onRetry = {
+                                scope.launch {
+                                    preferences.setAirControlEnabled(true)
+                                    AirControlForegroundService.start(context)
+                                }
+                            },
+                        )
+                    }
                     if (!permissions.accessibility) {
                         Spacer(Modifier.height(12.dp))
                         AccessibilityWarning(onClick = { AccessibilitySettingsLauncher.open(context) })
@@ -213,6 +241,18 @@ fun HomeScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.home_battery_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.clickable {
+                                PermissionSettingsLauncher.openBatteryOptimization(context)
+                            },
+                        )
+                        TextButton(onClick = { PermissionSettingsLauncher.openBatteryOptimization(context) }) {
+                            Text(stringResource(R.string.home_battery_cta))
+                        }
                     }
                 }
             }
@@ -340,6 +380,31 @@ private fun QuickAccessTile(
                 maxLines = 1,
             )
         }
+    }
+}
+
+@Composable
+private fun PipelineErrorCard(message: String, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AirDanger.copy(alpha = 0.12f))
+            .clickable(onClick = onRetry)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.home_pipeline_error_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = AirDanger,
+        )
+        Text(text = message, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = stringResource(R.string.home_pipeline_retry),
+            style = MaterialTheme.typography.labelLarge,
+            color = AirCyan,
+        )
     }
 }
 

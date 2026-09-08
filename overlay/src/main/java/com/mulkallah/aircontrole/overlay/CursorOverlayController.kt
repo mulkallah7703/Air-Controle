@@ -5,6 +5,7 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.view.Gravity
 import android.view.WindowManager
+import com.mulkallah.aircontrole.core.AirControleLog
 import com.mulkallah.aircontrole.core.model.CursorPosition
 
 class CursorOverlayController(private val context: Context) {
@@ -12,11 +13,11 @@ class CursorOverlayController(private val context: Context) {
     private var view: CursorOverlayView? = null
     private var attached = false
 
-    fun show(sizeScale: Float, pulseEnabled: Boolean) {
+    fun show(sizeScale: Float, pulseEnabled: Boolean): Boolean {
         if (attached) {
             view?.setSizeScale(sizeScale)
             view?.setPulseEnabled(pulseEnabled)
-            return
+            return true
         }
         val overlay = CursorOverlayView(context).apply {
             setSizeScale(sizeScale)
@@ -41,9 +42,16 @@ class CursorOverlayController(private val context: Context) {
             gravity = Gravity.TOP or Gravity.START
             title = "Air Controle cursor"
         }
-        windowManager.addView(overlay, params)
-        view = overlay
-        attached = true
+        return try {
+            windowManager.addView(overlay, params)
+            view = overlay
+            attached = true
+            AirControleLog.i("overlay attached")
+            true
+        } catch (error: Throwable) {
+            AirControleLog.e("overlay attach failed", error)
+            false
+        }
     }
 
     fun update(position: CursorPosition) {
@@ -57,9 +65,14 @@ class CursorOverlayController(private val context: Context) {
     fun hide() {
         val overlay = view ?: return
         if (attached) {
-            windowManager.removeView(overlay)
+            try {
+                windowManager.removeView(overlay)
+            } catch (error: Throwable) {
+                AirControleLog.w("overlay detach failed", error)
+            }
         }
         view = null
         attached = false
+        AirControleLog.i("overlay hidden")
     }
 }

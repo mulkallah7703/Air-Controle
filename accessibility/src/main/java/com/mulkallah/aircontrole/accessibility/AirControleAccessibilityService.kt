@@ -5,21 +5,28 @@ import android.accessibilityservice.GestureDescription
 import android.content.Intent
 import android.graphics.Path
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.mulkallah.aircontrole.core.AirControleLog
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge.ScrollDirection
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge.SwipeDirection
+import com.mulkallah.aircontrole.core.model.PipelineStatus
 
 class AirControleAccessibilityService : AccessibilityService(), AirControlBridge.ActionSink {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override val connected: Boolean get() = true
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         AirControlBridge.actionSink = this
-        AirControlBridge.updateStatus("accessibility_connected")
+        AirControlBridge.updateStatus(PipelineStatus.ACCESSIBILITY_CONNECTED)
+        AirControleLog.i("accessibility connected yes")
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) = Unit
@@ -29,24 +36,41 @@ class AirControleAccessibilityService : AccessibilityService(), AirControlBridge
     override fun onDestroy() {
         if (AirControlBridge.actionSink === this) {
             AirControlBridge.actionSink = null
+            AirControleLog.i("accessibility connected no")
         }
         super.onDestroy()
     }
 
-    override fun performHome(): Boolean = performGlobalAction(GLOBAL_ACTION_HOME)
-
-    override fun performBack(): Boolean = performGlobalAction(GLOBAL_ACTION_BACK)
-
-    override fun performRecents(): Boolean = performGlobalAction(GLOBAL_ACTION_RECENTS)
-
-    override fun performClick(x: Float, y: Float): Boolean {
-        val (width, height) = screenSize()
-        val path = Path().apply { moveTo(x * width, y * height) }
-        val stroke = GestureDescription.StrokeDescription(path, 0, 60)
-        return dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(), null, null)
+    override fun performHome(): Boolean = onMain {
+        val ok = performGlobalAction(GLOBAL_ACTION_HOME)
+        AirControleLog.i("accessibility HOME result=$ok")
+        ok
     }
 
-    override fun performScroll(direction: ScrollDirection): Boolean {
+    override fun performBack(): Boolean = onMain {
+        val ok = performGlobalAction(GLOBAL_ACTION_BACK)
+        AirControleLog.i("accessibility BACK result=$ok")
+        ok
+    }
+
+    override fun performRecents(): Boolean = onMain {
+        val ok = performGlobalAction(GLOBAL_ACTION_RECENTS)
+        AirControleLog.i("accessibility RECENTS result=$ok")
+        ok
+    }
+
+    override fun performClick(x: Float, y: Float): Boolean = onMain {
+        val (width, height) = screenSize()
+        val px = (x * width).coerceIn(0f, width)
+        val py = (y * height).coerceIn(0f, height)
+        val path = Path().apply { moveTo(px, py) }
+        val stroke = GestureDescription.StrokeDescription(path, 0, 60)
+        val ok = dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(), null, null)
+        AirControleLog.i("accessibility CLICK result=$ok at=$px,$py")
+        ok
+    }
+
+    override fun performScroll(direction: ScrollDirection): Boolean = onMain {
         val (width, height) = screenSize()
         val x = width * 0.5f
         val startY: Float
@@ -66,10 +90,12 @@ class AirControleAccessibilityService : AccessibilityService(), AirControlBridge
             lineTo(x, endY)
         }
         val stroke = GestureDescription.StrokeDescription(path, 0, 280)
-        return dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(), null, null)
+        val ok = dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(), null, null)
+        AirControleLog.i("accessibility SCROLL ${direction.name} result=$ok")
+        ok
     }
 
-    override fun performSwipe(direction: SwipeDirection): Boolean {
+    override fun performSwipe(direction: SwipeDirection): Boolean = onMain {
         val (width, height) = screenSize()
         val y = height * 0.5f
         val startX: Float
@@ -89,7 +115,9 @@ class AirControleAccessibilityService : AccessibilityService(), AirControlBridge
             lineTo(endX, y)
         }
         val stroke = GestureDescription.StrokeDescription(path, 0, 280)
-        return dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(), null, null)
+        val ok = dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(), null, null)
+        AirControleLog.i("accessibility SWIPE ${direction.name} result=$ok")
+        ok
     }
 
     override fun openApplication(packageName: String): Boolean {
@@ -125,5 +153,13 @@ class AirControleAccessibilityService : AccessibilityService(), AirControlBridge
             val metrics = resources.displayMetrics
             metrics.widthPixels.toFloat() to metrics.heightPixels.toFloat()
         }
+    }
+
+    private fun onMain(block: () -> Boolean): Boolean {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            return block()
+        }
+        mainHandler.post { block() }
+        return true
     }
 }

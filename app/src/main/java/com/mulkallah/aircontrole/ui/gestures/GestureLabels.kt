@@ -54,3 +54,28 @@ fun machineStateRes(state: String): Int = when (state) {
     "COOLDOWN" -> R.string.state_cooldown
     else -> R.string.state_idle
 }
+
+fun pipelineErrorRes(status: String): Int? = when (status) {
+    "model_missing" -> R.string.home_error_model_missing
+    "landmarker_failed" -> R.string.home_error_landmarker
+    "camera_start_failed" -> R.string.home_error_camera_start
+    "camera_error" -> R.string.home_error_camera
+    "camera_no_frames" -> R.string.home_error_camera_no_frames
+    "camera_permission" -> R.string.home_error_camera_permission
+    "overlay_failed" -> R.string.home_error_overlay
+    else -> null
+}
+
+fun gestureEmoji(key: String): String = when (key) {
+    GestureMappingCatalog.HAND_START -> "👋"
+    GestureMappingCatalog.POINT_MOVE -> "☝️"
+    GestureMappingCatalog.CLICK -> "🤏"
+    GestureMappingCatalog.SCROLL_UP -> "☝️⬆️"
+    GestureMappingCatalog.SCROLL_DOWN -> "☝️⬇️"
+    GestureMappingCatalog.SWIPE_RIGHT -> "☝️➡️"
+    GestureMappingCatalog.SWIPE_LEFT -> "☝️⬅️"
+    GestureMappingCatalog.PALM_PAUSE -> "✋"
+    GestureMappingCatalog.FIST_BACK -> "✊"
+    GestureMappingCatalog.PEACE_HOME -> "✌️"
+    else -> "🖐️"
+}

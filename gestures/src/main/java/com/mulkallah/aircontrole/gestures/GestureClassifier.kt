@@ -7,7 +7,7 @@ import kotlin.math.abs
 class GestureClassifier(
     private val pinchClose: Float = 0.055f,
     private val pinchOpen: Float = 0.09f,
-    private val extensionRatio: Float = 1.18f,
+    private val extensionRatio: Float = 1.10f,
 ) {
     fun classify(frame: HandFrame): Classification {
         if (!frame.isValid) {
