@@ -239,7 +239,7 @@ fun GestureTrainingScreen(
                 color = AirCyan,
             )
             LinearProgressIndicator(
-                progress = if (total == 0) 0f else done / total.toFloat(),
+                progress = { if (total == 0) 0f else done / total.toFloat() },
                 modifier = Modifier.fillMaxWidth(),
             )
             if (!permissions.camera) {
