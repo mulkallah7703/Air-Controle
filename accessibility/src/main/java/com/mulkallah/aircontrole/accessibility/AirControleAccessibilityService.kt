@@ -10,6 +10,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge.ScrollDirection
+import com.mulkallah.aircontrole.core.bridge.AirControlBridge.SwipeDirection
 
 class AirControleAccessibilityService : AccessibilityService(), AirControlBridge.ActionSink {
 
@@ -36,6 +37,8 @@ class AirControleAccessibilityService : AccessibilityService(), AirControlBridge
 
     override fun performBack(): Boolean = performGlobalAction(GLOBAL_ACTION_BACK)
 
+    override fun performRecents(): Boolean = performGlobalAction(GLOBAL_ACTION_RECENTS)
+
     override fun performClick(x: Float, y: Float): Boolean {
         val (width, height) = screenSize()
         val path = Path().apply { moveTo(x * width, y * height) }
@@ -61,6 +64,29 @@ class AirControleAccessibilityService : AccessibilityService(), AirControlBridge
         val path = Path().apply {
             moveTo(x, startY)
             lineTo(x, endY)
+        }
+        val stroke = GestureDescription.StrokeDescription(path, 0, 280)
+        return dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(), null, null)
+    }
+
+    override fun performSwipe(direction: SwipeDirection): Boolean {
+        val (width, height) = screenSize()
+        val y = height * 0.5f
+        val startX: Float
+        val endX: Float
+        when (direction) {
+            SwipeDirection.LEFT -> {
+                startX = width * 0.78f
+                endX = width * 0.22f
+            }
+            SwipeDirection.RIGHT -> {
+                startX = width * 0.22f
+                endX = width * 0.78f
+            }
+        }
+        val path = Path().apply {
+            moveTo(startX, y)
+            lineTo(endX, y)
         }
         val stroke = GestureDescription.StrokeDescription(path, 0, 280)
         return dispatchGesture(GestureDescription.Builder().addStroke(stroke).build(), null, null)

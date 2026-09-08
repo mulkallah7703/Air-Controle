@@ -22,8 +22,10 @@ Default language is **Arabic** with full **RTL**. English is a first-class secon
 4. White fingertip overlay cursor with a pulse when a gesture is recognized
 5. Foreground service so Air Control can stay on after you leave the app (within honest Android limits)
 6. Accessibility actions: Home, Back, scroll, click at the cursor, open Quick Access apps
-7. Settings stub: language, cursor, kill switch, one-time purchase note **29.99 SAR** (no billing yet)
-8. Gesture training / full customization: “later” stub screens only
+7. Settings: language, cursor, kill switch, one-time purchase note **29.99 SAR** (no billing yet)
+8. **My Gestures** customization: remap each gesture to Click, Scroll, Swipe, Back, Home, Pause, Recents, Move cursor, or None. Saved in DataStore and read live by the control loop.
+9. **Gesture training**: guided practice that uses the existing classifier. Two successful detections check off a gesture. Camera is required to detect; Accessibility is required later for system actions.
+10. Home Accessibility warning is tappable and opens system Accessibility settings (package `com.mulkallah.aircontrole`). Permission state refreshes when you return.
 
 ### Gestures
 
@@ -32,7 +34,7 @@ Default language is **Arabic** with full **RTL**. English is a first-class secon
 | Point + hold | Index extended | Move the white cursor |
 | Click | Pinch thumb to index | Tap at the cursor |
 | Scroll up / down | Point + fast vertical move | Scroll |
-| Swipe left / right | Point + fast horizontal move | Back / Home shortcut |
+| Swipe left / right | Point + fast horizontal move | Default: Back / Home (customizable) |
 | Palm pause | Open palm held | Pause / resume actions |
 | Fist back | Closed fist held | System Back |
 | Peace home | Index + middle held | System Home |
@@ -90,7 +92,7 @@ The durable path is **Play Console → Internal testing** (or another Play track
 | Permission | Why |
 | --- | --- |
 | Camera | Hand landmarks for the cursor and gestures. Processed on-device. |
-| Accessibility | Home, Back, scroll, tap at the cursor. You must enable it in system settings. |
+| Accessibility | Home, Back, Recents, scroll, swipe, tap at the cursor. You must enable it in system settings (tap the Home warning to jump there). Cursor movement can work without it; clicks and system actions will not. |
 | Display over other apps | White cursor overlay. Touches pass through to the app underneath. |
 | Notifications | Required so the foreground service can keep running after you leave Air Controle. |
 
@@ -126,8 +128,10 @@ Kotlin, Jetpack Compose, Material 3, CameraX, MediaPipe Hands (`tasks-vision`), 
 4. مؤشر أبيض يتابع طرف الإصبع مع نبضة عند رصد إيماءة
 5. خدمة أمامية لتبقى Air Control بعد مغادرة التطبيق (ضمن حدود أندرويد الصريحة)
 6. إمكانية الوصول: الرئيسية، رجوع، تمرير، نقر عند المؤشر، فتح تطبيقات الوصول السريع
-7. إعدادات أولية: اللغة، المؤشر، قاطع الطوارئ، ملاحظة شراء لمرة واحدة **29.99 ر.س** (بدون فوترة حقيقية بعد)
-8. تدريب الإيماءات / التخصيص الكامل: شاشات «لاحقًا» فقط
+7. إعدادات: اللغة، المؤشر، قاطع الطوارئ، ملاحظة شراء لمرة واحدة **29.99 ر.س** (بدون فوترة حقيقية بعد)
+8. **إيماءاتي:** إعادة تعيين كل إيماءة إلى نقر أو تمرير أو سحب أو رجوع أو الرئيسية أو إيقاف مؤقت أو الأخيرة أو تحريك المؤشر أو بدون. تُحفظ في DataStore وتُقرأ مباشرة أثناء التشغيل.
+9. **تدريب الإيماءات:** تمرين موجّه يعتمد على المصنّف الحالي. رصدان ناجحان يضعان علامة على الإيماءة. الكاميرا لازمة للرصد؛ إمكانية الوصول لازمة لاحقًا لأوامر النظام.
+10. تحذير إمكانية الوصول في الرئيسية قابل للضغط ويفتح إعدادات النظام (الحزمة `com.mulkallah.aircontrole`). تتحدّث حالة الأذونات عند العودة.
 
 ### الإيماءات
 
@@ -136,7 +140,7 @@ Kotlin, Jetpack Compose, Material 3, CameraX, MediaPipe Hands (`tasks-vision`), 
 | إشارة + تثبيت | السبابة ممدودة | تحريك المؤشر الأبيض |
 | نقر | إغلاق الإبهام والسبابة | ضغط عند المؤشر |
 | تمرير لأعلى / لأسفل | إشارة + حركة رأسية سريعة | تمرير |
-| سحب يسار / يمين | إشارة + حركة أفقية سريعة | اختصار رجوع / الرئيسية |
+| سحب يسار / يمين | إشارة + حركة أفقية سريعة | افتراضي: رجوع / الرئيسية (قابل للتخصيص) |
 | إيقاف بالكف | كف مفتوح ثابت | إيقاف / استئناف |
 | رجوع بالقبضة | قبضة ثابتة | زر الرجوع |
 | الرئيسية بعلامة النصر | السبابة والوسطى | زر الرئيسية |
@@ -174,7 +178,7 @@ cp keystore.properties.example keystore.properties
 ### الأذونات وحدود أندرويد
 
 - **الكاميرا:** لرصد اليد على الجهاز فقط.
-- **إمكانية الوصول:** لتنفيذ الرئيسية والرجوع والنقر. تفعّلها أنت من إعدادات النظام.
+- **إمكانية الوصول:** لتنفيذ الرئيسية والرجوع والأخيرة والنقر والتمرير. تفعّلها أنت من إعدادات النظام (اضغط التحذير في الرئيسية). المؤشر قد يتحرك بدونها؛ النقر وأوامر النظام لن تعمل.
 - **الظهور فوق التطبيقات:** للمؤشر الأبيض.
 - **الإشعارات:** حتى تبقى الخدمة الأمامية بعد مغادرة التطبيق.
 

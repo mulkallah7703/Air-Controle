@@ -24,9 +24,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.SportsHandball
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -56,9 +58,13 @@ import com.mulkallah.aircontrole.R
 import com.mulkallah.aircontrole.control.AirControlForegroundService
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge
 import com.mulkallah.aircontrole.core.model.QuickAccessApp
+import com.mulkallah.aircontrole.core.permissions.AccessibilitySettingsLauncher
 import com.mulkallah.aircontrole.core.permissions.PermissionChecker
 import com.mulkallah.aircontrole.core.prefs.AirControlePreferences
+import com.mulkallah.aircontrole.ui.gestures.gestureShortRes
+import com.mulkallah.aircontrole.ui.gestures.machineStateRes
 import com.mulkallah.aircontrole.ui.theme.AirCyan
+import com.mulkallah.aircontrole.ui.theme.AirDanger
 import com.mulkallah.aircontrole.ui.theme.AirNavy
 import com.mulkallah.aircontrole.ui.theme.AirOk
 import kotlinx.coroutines.launch
@@ -166,20 +172,20 @@ fun HomeScreen(
                     }
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        text = "${stringResource(R.string.home_status)} · ${localizedState(machine)}",
+                        text = "${stringResource(R.string.home_status)} · ${stringResource(machineStateRes(machine))}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     lastGesture?.let { gesture ->
                         Text(
-                            text = "${stringResource(R.string.home_last_gesture)} · ${localizedGesture(gesture)}",
+                            text = "${stringResource(R.string.home_last_gesture)} · ${stringResource(gestureShortRes(gesture))}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = AirCyan,
                         )
                     }
-                    if (on && !permissions.accessibility) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(stringResource(R.string.home_accessibility_hint), style = MaterialTheme.typography.bodyMedium)
+                    if (!permissions.accessibility) {
+                        Spacer(Modifier.height(12.dp))
+                        AccessibilityWarning(onClick = { AccessibilitySettingsLauncher.open(context) })
                     }
                     if (on) {
                         Spacer(Modifier.height(8.dp))
@@ -192,6 +198,11 @@ fun HomeScreen(
                 }
             }
 
+            Spacer(Modifier.height(16.dp))
+            PermissionChecklist(
+                permissions = permissions,
+                onRefresh = { permissions = PermissionChecker.snapshot(context) },
+            )
             Spacer(Modifier.height(24.dp))
             Text(stringResource(R.string.home_quick_access), style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(12.dp))
@@ -274,32 +285,39 @@ private fun QuickAccessTile(
 }
 
 @Composable
-private fun localizedState(state: String): String {
-    val res = when (state) {
-        "IDLE" -> R.string.state_idle
-        "HAND_DETECTED" -> R.string.state_hand_detected
-        "TRACKING" -> R.string.state_tracking
-        "GESTURE_RECOGNIZED" -> R.string.state_gesture_recognized
-        "ACTION" -> R.string.state_action
-        "COOLDOWN" -> R.string.state_cooldown
-        else -> R.string.state_idle
+private fun AccessibilityWarning(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AirDanger.copy(alpha = 0.12f))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = AirDanger)
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.home_accessibility_hint),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.home_accessibility_cta),
+                style = MaterialTheme.typography.labelLarge,
+                color = AirCyan,
+            )
+            Text(
+                text = stringResource(R.string.home_accessibility_package),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = stringResource(R.string.action_open_settings),
+            tint = AirCyan,
+        )
     }
-    return stringResource(res)
-}
-
-@Composable
-private fun localizedGesture(gesture: String): String {
-    val res = when (gesture) {
-        "CLICK" -> R.string.gesture_click
-        "SCROLL_UP" -> R.string.gesture_scroll_up
-        "SCROLL_DOWN" -> R.string.gesture_scroll_down
-        "SWIPE_LEFT" -> R.string.gesture_swipe_left
-        "SWIPE_RIGHT" -> R.string.gesture_swipe_right
-        "PALM_PAUSE" -> R.string.gesture_palm
-        "FIST_BACK" -> R.string.gesture_fist
-        "PEACE_HOME" -> R.string.gesture_peace
-        "POINT_MOVE" -> R.string.gesture_point
-        else -> R.string.gesture_point
-    }
-    return stringResource(res)
 }
