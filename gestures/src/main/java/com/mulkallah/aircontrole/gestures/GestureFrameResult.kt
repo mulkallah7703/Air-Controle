@@ -9,4 +9,5 @@ data class GestureFrameResult(
     val cursor: CursorPosition,
     val pulse: Boolean,
     val shouldDispatch: Boolean,
+    val sessionStart: Boolean = false,
 )

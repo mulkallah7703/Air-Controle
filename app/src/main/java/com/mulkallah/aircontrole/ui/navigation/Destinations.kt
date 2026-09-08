@@ -9,7 +9,6 @@ object Destinations {
     const val Ready = "onboarding_ready"
     const val Home = "home"
     const val Settings = "settings"
-    const val Training = "training"
-    const val Customize = "customize"
+    const val GestureGuide = "gesture_guide"
     const val AppPicker = "app_picker"
 }

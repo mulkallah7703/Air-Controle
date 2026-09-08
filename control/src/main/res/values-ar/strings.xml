@@ -4,4 +4,6 @@
     <string name="air_control_notification_title">Air Controle</string>
     <string name="air_control_notification_text">التحكم الجوي مفعّل. يمكنك مغادرة التطبيق — المؤشر يتابع يدك.</string>
     <string name="air_control_notification_stop">إيقاف</string>
+    <string name="overlay_tracking">جاري التتبع</string>
+    <string name="overlay_control_started">بدأت التحكم</string>
 </resources>

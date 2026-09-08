@@ -1,7 +1,10 @@
 package com.mulkallah.aircontrole.ui.home
 
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,9 +28,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.SportsHandball
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,10 +50,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mulkallah.aircontrole.R
@@ -69,12 +75,18 @@ import com.mulkallah.aircontrole.ui.theme.AirNavy
 import com.mulkallah.aircontrole.ui.theme.AirOk
 import kotlinx.coroutines.launch
 
+private data class QuickAccessVisual(
+    val app: QuickAccessApp,
+    val label: String,
+    val installed: Boolean,
+    val icon: Drawable?,
+)
+
 @Composable
 fun HomeScreen(
     preferences: AirControlePreferences,
     onSettings: () -> Unit,
-    onTraining: () -> Unit,
-    onCustomize: () -> Unit,
+    onGestureGuide: () -> Unit,
     onAddApp: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -98,7 +110,10 @@ fun HomeScreen(
     }
 
     val apps = remember(extras) { preferences.resolveQuickAccess(extras) }
+    val visuals = remember(apps) { apps.map { resolveQuickAccessVisual(context.packageManager, it) } }
     val on = enabled || running
+    val tracking = machine == "HAND_DETECTED" || machine == "TRACKING" ||
+        machine == "GESTURE_RECOGNIZED" || machine == "ACTION" || machine == "COOLDOWN"
 
     Column(
         modifier = Modifier
@@ -176,6 +191,10 @@ fun HomeScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (on && tracking && !paused) {
+                        Spacer(Modifier.height(8.dp))
+                        TrackingChip(machine)
+                    }
                     lastGesture?.let { gesture ->
                         Text(
                             text = "${stringResource(R.string.home_last_gesture)} · ${stringResource(gestureShortRes(gesture))}",
@@ -208,23 +227,23 @@ fun HomeScreen(
             Spacer(Modifier.height(12.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                modifier = Modifier.height(280.dp),
+                modifier = Modifier.height(300.dp),
                 userScrollEnabled = false,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 8.dp),
             ) {
-                items(apps, key = { it.id }) { app ->
-                    QuickAccessTile(app) {
-                        val launched = context.packageManager.getLaunchIntentForPackage(app.packageName)
+                items(visuals, key = { it.app.id }) { visual ->
+                    QuickAccessTile(visual) {
+                        val launched = context.packageManager.getLaunchIntentForPackage(visual.app.packageName)
                         if (launched != null) {
                             launched.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             context.startActivity(launched)
-                            AirControlBridge.actionSink?.openApplication(app.packageName)
+                            AirControlBridge.actionSink?.openApplication(visual.app.packageName)
                         } else {
                             Toast.makeText(
                                 context,
-                                context.getString(R.string.home_not_installed, app.label),
+                                context.getString(R.string.home_not_installed, visual.label),
                                 Toast.LENGTH_SHORT,
                             ).show()
                         }
@@ -232,22 +251,21 @@ fun HomeScreen(
                 }
                 item {
                     QuickAccessTile(
-                        app = QuickAccessApp("add", stringResource(R.string.home_add_app), ""),
-                        icon = Icons.Outlined.Add,
+                        visual = QuickAccessVisual(
+                            app = QuickAccessApp("add", stringResource(R.string.home_add_app), ""),
+                            label = stringResource(R.string.home_add_app),
+                            installed = true,
+                            icon = null,
+                        ),
+                        fallbackIcon = Icons.Outlined.Add,
                         onClick = onAddApp,
                     )
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onTraining) {
-                    Icon(Icons.Outlined.SportsHandball, contentDescription = null)
-                    Text(stringResource(R.string.home_training), modifier = Modifier.padding(start = 8.dp))
-                }
-                TextButton(onClick = onCustomize) {
-                    Icon(Icons.Outlined.Tune, contentDescription = null)
-                    Text(stringResource(R.string.home_customize), modifier = Modifier.padding(start = 8.dp))
-                }
+            TextButton(onClick = onGestureGuide) {
+                Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null)
+                Text(stringResource(R.string.home_guide), modifier = Modifier.padding(start = 8.dp))
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -255,9 +273,25 @@ fun HomeScreen(
 }
 
 @Composable
+private fun TrackingChip(machine: String) {
+    val label = when (machine) {
+        "HAND_DETECTED" -> stringResource(R.string.home_control_started)
+        else -> stringResource(R.string.home_tracking)
+    }
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(AirCyan.copy(alpha = 0.16f))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    ) {
+        Text(label, color = AirCyan, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+@Composable
 private fun QuickAccessTile(
-    app: QuickAccessApp,
-    icon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Outlined.Apps,
+    visual: QuickAccessVisual,
+    fallbackIcon: ImageVector = Icons.Outlined.Apps,
     onClick: () -> Unit,
 ) {
     Column(
@@ -266,21 +300,46 @@ private fun QuickAccessTile(
             .background(MaterialTheme.colorScheme.surface)
             .clickable(onClick = onClick)
             .padding(12.dp)
-            .height(88.dp),
+            .height(96.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Box(
             modifier = Modifier
-                .size(36.dp)
+                .size(40.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(AirCyan.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = app.label, tint = AirCyan)
+            val drawable = visual.icon
+            if (drawable != null) {
+                val bitmap = remember(visual.app.packageName, drawable) {
+                    drawable.toBitmap(width = 96, height = 96)
+                }
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = visual.label,
+                    modifier = Modifier.size(36.dp),
+                )
+            } else {
+                Icon(fallbackIcon, contentDescription = visual.label, tint = AirCyan)
+            }
         }
         Spacer(Modifier.height(8.dp))
-        Text(app.label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        Text(
+            text = visual.label,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (!visual.installed && visual.app.packageName.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.home_app_unavailable),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -320,4 +379,25 @@ private fun AccessibilityWarning(onClick: () -> Unit) {
             tint = AirCyan,
         )
     }
+}
+
+private fun resolveQuickAccessVisual(pm: PackageManager, app: QuickAccessApp): QuickAccessVisual {
+    val icon = try {
+        pm.getApplicationIcon(app.packageName)
+    } catch (_: PackageManager.NameNotFoundException) {
+        null
+    }
+    val label = try {
+        val info = pm.getApplicationInfo(app.packageName, 0)
+        pm.getApplicationLabel(info).toString()
+    } catch (_: PackageManager.NameNotFoundException) {
+        app.label
+    }
+    val installed = icon != null && pm.getLaunchIntentForPackage(app.packageName) != null
+    return QuickAccessVisual(
+        app = app,
+        label = label,
+        installed = installed,
+        icon = icon,
+    )
 }

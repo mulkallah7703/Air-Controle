@@ -17,27 +17,27 @@ Default language is **Arabic** with full **RTL**. English is a first-class secon
 ### What this MVP does
 
 1. Onboarding: Welcome → Camera → Accessibility → Overlay → Notifications → Ready
-2. Home: Quick Access (Instagram, TikTok, YouTube, WhatsApp, Chrome + Add app) and an Air Control ON/OFF toggle with live state
+2. Home: Quick Access (Instagram, TikTok, YouTube, WhatsApp, Chrome + Add app) with **real installed app icons**, and an Air Control ON/OFF toggle with live state
 3. Gesture state machine: `IDLE → HAND_DETECTED → TRACKING → GESTURE_RECOGNIZED → ACTION → COOLDOWN`
-4. White fingertip overlay cursor with a pulse when a gesture is recognized
+4. White fingertip overlay cursor appears as soon as a hand is raised; it pulses when control starts and when a gesture is recognized
 5. Foreground service so Air Control can stay on after you leave the app (within honest Android limits)
-6. Accessibility actions: Home, Back, scroll, click at the cursor, open Quick Access apps
+6. Accessibility actions: Home, Back, scroll, swipe next/previous, click at the cursor, open Quick Access apps
 7. Settings: language, cursor, kill switch, one-time purchase note **29.99 SAR** (no billing yet)
-8. **My Gestures** customization: remap each gesture to Click, Scroll, Swipe, Back, Home, Pause, Recents, Move cursor, or None. Saved in DataStore and read live by the control loop.
-9. **Gesture training**: guided practice that uses the existing classifier. Two successful detections check off a gesture. Camera is required to detect; Accessibility is required later for system actions.
-10. Home Accessibility warning is tappable and opens system Accessibility settings (package `com.mulkallah.aircontrole`). Permission state refreshes when you return.
+8. **Gesture guide** (`دليل الإيماءات`): one fixed mapping for everyone, with icons and bilingual descriptions. No per-user training or remapping.
+9. Home Accessibility warning is tappable and opens system Accessibility settings (package `com.mulkallah.aircontrole`). Permission state refreshes when you return.
 
 ### Gestures
 
 | Gesture | Pose / motion | Action |
 | --- | --- | --- |
-| Point + hold | Index extended | Move the white cursor |
+| Raise open palm / hand appear | Any recognized hand, typically open palm | Start control — white cursor appears |
+| Point + move | Index extended | Move the white cursor |
 | Click | Pinch thumb to index | Tap at the cursor |
 | Scroll up / down | Point + fast vertical move | Scroll |
-| Swipe left / right | Point + fast horizontal move | Default: Back / Home (customizable) |
-| Palm pause | Open palm held | Pause / resume actions |
-| Fist back | Closed fist held | System Back |
-| Peace home | Index + middle held | System Home |
+| Swipe right / left | Point + fast horizontal move | Next / previous |
+| Open palm hold | Open palm held after tracking starts | Pause / resume actions |
+| Fist | Closed fist held | System Back |
+| Peace ✌️ | Index + middle held | System Home |
 
 ### Modules
 
@@ -123,27 +123,27 @@ Kotlin, Jetpack Compose, Material 3, CameraX, MediaPipe Hands (`tasks-vision`), 
 ### ماذا يفعل هذا الإصدار الأول
 
 1. تهيئة: ترحيب → كاميرا → إمكانية الوصول → الطبقة → الإشعارات → جاهز
-2. الرئيسية: وصول سريع (إنستغرام، تيك توك، يوتيوب، واتساب، كروم + إضافة تطبيق) ومفتاح Air Control مع حالة واضحة
+2. الرئيسية: وصول سريع (إنستغرام، تيك توك، يوتيوب، واتساب، كروم + إضافة تطبيق) بأيقونات التطبيقات الحقيقية، ومفتاح Air Control مع حالة واضحة
 3. آلة حالات الإيماءات: `IDLE → HAND_DETECTED → TRACKING → GESTURE_RECOGNIZED → ACTION → COOLDOWN`
-4. مؤشر أبيض يتابع طرف الإصبع مع نبضة عند رصد إيماءة
+4. يظهر المؤشر الأبيض فور رفع اليد، مع نبضة عند بدء التحكم وعند رصد إيماءة
 5. خدمة أمامية لتبقى Air Control بعد مغادرة التطبيق (ضمن حدود أندرويد الصريحة)
-6. إمكانية الوصول: الرئيسية، رجوع، تمرير، نقر عند المؤشر، فتح تطبيقات الوصول السريع
+6. إمكانية الوصول: الرئيسية، رجوع، تمرير، التالي/السابق، نقر عند المؤشر، فتح تطبيقات الوصول السريع
 7. إعدادات: اللغة، المؤشر، قاطع الطوارئ، ملاحظة شراء لمرة واحدة **29.99 ر.س** (بدون فوترة حقيقية بعد)
-8. **إيماءاتي:** إعادة تعيين كل إيماءة إلى نقر أو تمرير أو سحب أو رجوع أو الرئيسية أو إيقاف مؤقت أو الأخيرة أو تحريك المؤشر أو بدون. تُحفظ في DataStore وتُقرأ مباشرة أثناء التشغيل.
-9. **تدريب الإيماءات:** تمرين موجّه يعتمد على المصنّف الحالي. رصدان ناجحان يضعان علامة على الإيماءة. الكاميرا لازمة للرصد؛ إمكانية الوصول لازمة لاحقًا لأوامر النظام.
-10. تحذير إمكانية الوصول في الرئيسية قابل للضغط ويفتح إعدادات النظام (الحزمة `com.mulkallah.aircontrole`). تتحدّث حالة الأذونات عند العودة.
+8. **دليل الإيماءات:** تعيين ثابت واحد للجميع مع أيقونات ووصف بالعربية والإنجليزية. لا تدريب ولا تخصيص لكل مستخدم.
+9. تحذير إمكانية الوصول في الرئيسية قابل للضغط ويفتح إعدادات النظام (الحزمة `com.mulkallah.aircontrole`). تتحدّث حالة الأذونات عند العودة.
 
 ### الإيماءات
 
 | الإيماءة | الوضعية | الإجراء |
 | --- | --- | --- |
-| إشارة + تثبيت | السبابة ممدودة | تحريك المؤشر الأبيض |
+| رفع الكف / ظهور اليد | أي يد متعرَّف عليها، غالبًا كف مفتوح | بدء التحكم — يظهر المؤشر الأبيض |
+| إشارة + تحريك | السبابة ممدودة | تحريك المؤشر الأبيض |
 | نقر | إغلاق الإبهام والسبابة | ضغط عند المؤشر |
 | تمرير لأعلى / لأسفل | إشارة + حركة رأسية سريعة | تمرير |
-| سحب يسار / يمين | إشارة + حركة أفقية سريعة | افتراضي: رجوع / الرئيسية (قابل للتخصيص) |
-| إيقاف بالكف | كف مفتوح ثابت | إيقاف / استئناف |
-| رجوع بالقبضة | قبضة ثابتة | زر الرجوع |
-| الرئيسية بعلامة النصر | السبابة والوسطى | زر الرئيسية |
+| سحب يمين / يسار | إشارة + حركة أفقية سريعة | التالي / السابق |
+| تثبيت الكف | كف مفتوح ثابت بعد بدء التتبع | إيقاف / استئناف |
+| قبضة | قبضة ثابتة | زر الرجوع |
+| علامة النصر ✌️ | السبابة والوسطى | زر الرئيسية |
 
 ### البناء والتشغيل
 
