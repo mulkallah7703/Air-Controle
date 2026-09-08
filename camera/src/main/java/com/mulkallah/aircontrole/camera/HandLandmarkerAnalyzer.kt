@@ -30,13 +30,16 @@ class HandLandmarkerAnalyzer(
 
     private val busy = AtomicBoolean(false)
     private val frames = AtomicInteger(0)
+    private val analyzed = AtomicInteger(0)
     private val lastFpsLogMs = AtomicLong(0L)
     private val lastLandmarkCount = AtomicInteger(0)
     private val timestampMs = AtomicLong(0L)
+    private val consecutiveErrors = AtomicInteger(0)
 
-    private val landmarker: HandLandmarker? = createLandmarker(context)
+    private val landmarker: HandLandmarker? = createLandmarker(context.applicationContext)
 
     val isReady: Boolean get() = landmarker != null
+    val analyzedFrameCount: Int get() = analyzed.get()
 
     override fun analyze(imageProxy: ImageProxy) {
         val marker = landmarker
@@ -44,6 +47,7 @@ class HandLandmarkerAnalyzer(
             imageProxy.close()
             return
         }
+        analyzed.incrementAndGet()
         if (!busy.compareAndSet(false, true)) {
             imageProxy.close()
             return
@@ -56,15 +60,23 @@ class HandLandmarkerAnalyzer(
             marker.detectAsync(mpImage, now)
         } catch (error: Throwable) {
             busy.set(false)
-            AirControleLog.e("landmarker analyze failed", error)
-            onError(error)
+            AirControleLog.e(
+                "landmarker analyze failed ${error.javaClass.name}: ${error.message}",
+                error,
+            )
+            reportIfPersistent(error)
         } finally {
             imageProxy.close()
         }
     }
 
+    fun resetBusy() {
+        busy.set(false)
+    }
+
     private fun onResult(result: HandLandmarkerResult, @Suppress("UNUSED_PARAMETER") image: MPImage) {
         busy.set(false)
+        consecutiveErrors.set(0)
         val now = SystemClock.uptimeMillis()
         val landmarks = result.landmarks().firstOrNull()
         val count = landmarks?.size ?: 0
@@ -108,54 +120,90 @@ class HandLandmarkerAnalyzer(
         try {
             landmarker?.close()
         } catch (error: Throwable) {
-            AirControleLog.w("landmarker close failed", error)
+            AirControleLog.w("landmarker close failed ${error.javaClass.name}: ${error.message}", error)
         }
     }
 
     private fun createLandmarker(context: Context): HandLandmarker? {
+        logAssetInventory(context)
         if (!modelAssetPresent(context)) {
             val error = IllegalStateException(PipelineStatus.MODEL_MISSING)
             AirControleLog.e("MediaPipe model missing: $MODEL_ASSET")
             onError(error)
             return null
         }
-        return try {
-            val options = HandLandmarker.HandLandmarkerOptions.builder()
-                .setBaseOptions(
-                    BaseOptions.builder()
-                        .setModelAssetPath(MODEL_ASSET)
-                        .setDelegate(Delegate.CPU)
-                        .build(),
+        var lastError: Throwable? = null
+        repeat(2) { attempt ->
+            try {
+                val options = HandLandmarker.HandLandmarkerOptions.builder()
+                    .setBaseOptions(
+                        BaseOptions.builder()
+                            .setModelAssetPath(MODEL_ASSET)
+                            .setDelegate(Delegate.CPU)
+                            .build(),
+                    )
+                    .setRunningMode(RunningMode.LIVE_STREAM)
+                    .setNumHands(1)
+                    .setMinHandDetectionConfidence(0.40f)
+                    .setMinHandPresenceConfidence(0.40f)
+                    .setMinTrackingConfidence(0.40f)
+                    .setResultListener(::onResult)
+                    .setErrorListener { error ->
+                        busy.set(false)
+                        AirControleLog.e(
+                            "landmarker runtime error ${error.javaClass.name}: ${error.message}",
+                            error,
+                        )
+                        reportIfPersistent(error)
+                    }
+                    .build()
+                val created = HandLandmarker.createFromOptions(context, options)
+                AirControleLog.i("landmarker ready model=$MODEL_ASSET delegate=CPU")
+                return created
+            } catch (error: Throwable) {
+                lastError = error
+                AirControleLog.e(
+                    "landmarker create failed attempt=${attempt + 1} " +
+                        "${error.javaClass.name}: ${error.message}",
+                    error,
                 )
-                .setRunningMode(RunningMode.LIVE_STREAM)
-                .setNumHands(1)
-                .setMinHandDetectionConfidence(0.40f)
-                .setMinHandPresenceConfidence(0.40f)
-                .setMinTrackingConfidence(0.40f)
-                .setResultListener(::onResult)
-                .setErrorListener { error ->
-                    AirControleLog.e("landmarker runtime error", error)
-                    onError(error)
-                }
-                .build()
-            val created = HandLandmarker.createFromOptions(context, options)
-            AirControleLog.i("landmarker ready model=$MODEL_ASSET delegate=CPU")
-            created
-        } catch (error: Throwable) {
-            AirControleLog.e("landmarker create failed", error)
-            onError(error)
-            null
+            }
+        }
+        onError(IllegalStateException(PipelineStatus.LANDMARKER_FAILED, lastError))
+        return null
+    }
+
+    private fun reportIfPersistent(error: Throwable) {
+        val count = consecutiveErrors.incrementAndGet()
+        if (count >= PERSISTENT_ERROR_THRESHOLD) {
+            onError(IllegalStateException(PipelineStatus.LANDMARKER_FAILED, error))
         }
     }
 
     companion object {
         const val MODEL_ASSET = "hand_landmarker.task"
+        private const val PERSISTENT_ERROR_THRESHOLD = 5
 
         fun modelAssetPresent(context: Context): Boolean {
             return try {
-                context.assets.open(MODEL_ASSET).use { stream -> stream.available() > 0 }
-            } catch (_: Exception) {
+                context.assets.open(MODEL_ASSET).use { stream ->
+                    stream.read() >= 0
+                }
+            } catch (error: Exception) {
+                AirControleLog.e(
+                    "model asset open failed ${error.javaClass.name}: ${error.message}",
+                    error,
+                )
                 false
+            }
+        }
+
+        private fun logAssetInventory(context: Context) {
+            try {
+                val names = context.assets.list("")?.joinToString().orEmpty()
+                AirControleLog.i("camera assets=[$names] lookingFor=$MODEL_ASSET")
+            } catch (error: Exception) {
+                AirControleLog.w("camera assets list failed: ${error.message}", error)
             }
         }
     }

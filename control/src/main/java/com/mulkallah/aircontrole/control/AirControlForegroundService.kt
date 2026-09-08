@@ -112,10 +112,44 @@ class AirControlForegroundService : LifecycleService() {
         if (overlayShown) {
             AirControlBridge.updateStatus(PipelineStatus.RUNNING)
         }
-        val camera = CameraHandTracker(
+        val camera = createTracker()
+        tracker = camera
+        var lastError: Throwable? = null
+        repeat(START_ATTEMPTS) { attempt ->
+            try {
+                AirControleLog.i("camera.start attempt=${attempt + 1}/$START_ATTEMPTS")
+                camera.start()
+                if (camera.isBound) {
+                    watchForFrames(camera)
+                    return
+                }
+                lastError = IllegalStateException(PipelineStatus.CAMERA_START_FAILED)
+                AirControleLog.e("camera.start attempt=${attempt + 1} finished unbound")
+            } catch (error: Throwable) {
+                lastError = error
+                AirControleLog.e(
+                    "camera.start attempt=${attempt + 1} threw ${error.javaClass.name}: ${error.message}",
+                    error,
+                )
+            }
+            if (attempt < START_ATTEMPTS - 1) {
+                val backoffMs = 400L * (attempt + 1)
+                AirControleLog.i("camera.start retry in ${backoffMs}ms")
+                delay(backoffMs)
+            }
+        }
+        val token = PipelineStatus.fromThrowable(
+            lastError ?: IllegalStateException(PipelineStatus.CAMERA_START_FAILED),
+        )
+        AirControleLog.e("camera pipeline gave up token=$token message=${lastError?.message}")
+        AirControlBridge.updateStatus(token)
+    }
+
+    private fun createTracker(): CameraHandTracker {
+        return CameraHandTracker(
             context = applicationContext,
-            lifecycleOwner = this,
             onHand = { frame ->
+                markPipelineHealthy()
                 if (AirControlBridge.paused.value && machine.state != GestureState.COOLDOWN) {
                     val result = machine.onFrame(frame)
                     publishFrame(result.cursor, result.state.name, result.pose.name)
@@ -146,12 +180,16 @@ class AirControlForegroundService : LifecycleService() {
                 }
             },
             onEmpty = { timestamp ->
+                markPipelineHealthy()
                 val result = machine.onLostHand(timestamp)
                 publishFrame(result.cursor, result.state.name, result.pose.name)
             },
             onError = { error ->
-                val token = pipelineErrorToken(error)
-                AirControleLog.e("pipeline error token=$token message=${error.message}", error)
+                val token = PipelineStatus.fromThrowable(error)
+                AirControleLog.e(
+                    "pipeline error token=$token ${error.javaClass.name}: ${error.message}",
+                    error,
+                )
                 AirControlBridge.updateStatus(token)
             },
             onCameraBound = {
@@ -161,29 +199,54 @@ class AirControlForegroundService : LifecycleService() {
                 AirControleLog.i("pipeline camera bound landmarker ready")
             },
         )
-        tracker = camera
-        try {
-            camera.start()
-            watchForFrames(camera)
-        } catch (error: Throwable) {
-            AirControleLog.e("camera.start threw", error)
-            AirControlBridge.updateStatus(pipelineErrorToken(error))
+    }
+
+    private fun markPipelineHealthy() {
+        val status = AirControlBridge.statusMessage.value
+        if (status == PipelineStatus.OVERLAY_FAILED) return
+        if (PipelineStatus.isError(status) || status.isEmpty() || status == PipelineStatus.RUNNING) {
+            if (PipelineStatus.isError(status)) {
+                AirControleLog.i("pipeline recovered from $status — frames flowing")
+            }
+            AirControlBridge.updateStatus(PipelineStatus.CAMERA_BOUND)
         }
     }
 
     private suspend fun watchForFrames(camera: CameraHandTracker) {
-        delay(4_000L)
+        delay(2_000L)
         if (!AirControlBridge.running.value) return
-        if (PipelineStatus.isError(AirControlBridge.statusMessage.value)) return
-        if (camera.deliveredFrameCount == 0) {
-            AirControleLog.e("no camera frames after 4s — Samsung battery / camera FGS likely blocked")
-            AirControlBridge.updateStatus(PipelineStatus.CAMERA_NO_FRAMES)
-        } else {
+        if (camera.deliveredFrameCount > 0) {
+            AirControleLog.i(
+                "watchdog early ok frames=${camera.deliveredFrameCount} hands=${camera.deliveredHandCount}",
+            )
+            return
+        }
+        AirControleLog.w(
+            "watchdog: no MediaPipe results after 2s analyzed=${camera.analyzedFrameCount} bound=${camera.isBound}",
+        )
+        if (camera.analyzedFrameCount == 0 || !camera.isBound) {
+            try {
+                AirControleLog.i("watchdog rebinding camera")
+                camera.rebind()
+            } catch (error: Throwable) {
+                AirControleLog.e("watchdog rebind threw ${error.javaClass.name}: ${error.message}", error)
+            }
+        }
+        delay(3_000L)
+        if (!AirControlBridge.running.value) return
+        if (camera.deliveredFrameCount > 0) {
             AirControleLog.i(
                 "watchdog ok frames=${camera.deliveredFrameCount} hands=${camera.deliveredHandCount} " +
-                    "state=${AirControlBridge.machineState.value}",
+                    "analyzed=${camera.analyzedFrameCount} state=${AirControlBridge.machineState.value}",
             )
+            return
         }
+        if (PipelineStatus.isError(AirControlBridge.statusMessage.value)) return
+        AirControleLog.e(
+            "no camera frames after retry analyzed=${camera.analyzedFrameCount} bound=${camera.isBound} " +
+                "— Samsung battery / camera FGS likely blocked",
+        )
+        AirControlBridge.updateStatus(PipelineStatus.CAMERA_NO_FRAMES)
     }
 
     private fun publishFrame(
@@ -333,6 +396,8 @@ class AirControlForegroundService : LifecycleService() {
     }
 
     companion object {
+        private const val START_ATTEMPTS = 2
+
         @Volatile
         var isStarted: Boolean = false
             private set
@@ -352,16 +417,4 @@ class AirControlForegroundService : LifecycleService() {
     }
 }
 
-private fun pipelineErrorToken(error: Throwable): String {
-    val message = error.message.orEmpty()
-    return when {
-        message == PipelineStatus.MODEL_MISSING || message.contains("hand_landmarker", ignoreCase = true) ->
-            PipelineStatus.MODEL_MISSING
-        message == PipelineStatus.CAMERA_PERMISSION -> PipelineStatus.CAMERA_PERMISSION
-        message == PipelineStatus.LANDMARKER_FAILED -> PipelineStatus.LANDMARKER_FAILED
-        message.contains("landmarker", ignoreCase = true) -> PipelineStatus.LANDMARKER_FAILED
-        message.contains("camera", ignoreCase = true) -> PipelineStatus.CAMERA_START_FAILED
-        else -> PipelineStatus.CAMERA_ERROR
-    }
-}
 

@@ -90,14 +90,20 @@ object PermissionSettingsLauncher {
     }
 
     fun openBatteryOptimization(context: Context) {
-        val request = Intent(
-            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-            Uri.parse("package:${context.packageName}"),
+        val packageUri = Uri.parse("package:${context.packageName}")
+        val candidates = listOf(
+            Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, packageUri),
+            Intent("android.settings.APP_BATTERY_SETTINGS").setData(packageUri),
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri),
+            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
         )
-        try {
-            start(context, request)
-        } catch (_: Exception) {
-            start(context, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+        for (intent in candidates) {
+            try {
+                start(context, intent)
+                return
+            } catch (_: Exception) {
+                // Try the next deep-link so Samsung can still reach Unrestricted.
+            }
         }
     }
 

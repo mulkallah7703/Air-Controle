@@ -34,4 +34,39 @@ object PipelineStatus {
     )
 
     fun isError(status: String): Boolean = status in errors
+
+    /**
+     * Map a camera / MediaPipe failure to a Home token. Walks the cause chain so
+     * CameraX "surface combination" and native-load errors are not dumped as a
+     * generic [CAMERA_ERROR].
+     */
+    fun fromThrowable(error: Throwable): String {
+        val chain = generateSequence(error) { it.cause }.toList()
+        val messages = chain.map { it.message.orEmpty() }
+        val classes = chain.map { it.javaClass.simpleName }
+        val blob = (messages + classes).joinToString(" ").lowercase()
+        return when {
+            messages.any { it == MODEL_MISSING } || blob.contains("hand_landmarker") && blob.contains("missing") ->
+                MODEL_MISSING
+            blob.contains("hand_landmarker.task") && (blob.contains("asset") || blob.contains("open") || blob.contains("found")) ->
+                MODEL_MISSING
+            messages.any { it == CAMERA_PERMISSION } || blob.contains("permission") && blob.contains("camera") ->
+                CAMERA_PERMISSION
+            messages.any { it == LANDMARKER_FAILED } ||
+                blob.contains("landmarker") ||
+                blob.contains("mediapipe") ||
+                blob.contains("tflite") ||
+                blob.contains("unsatisfiedlink") ||
+                blob.contains("dlopen") ->
+                LANDMARKER_FAILED
+            messages.any { it == CAMERA_START_FAILED } ||
+                blob.contains("surface combination") ||
+                blob.contains("cameraunavailable") ||
+                blob.contains("cameraaccessexception") ||
+                blob.contains("bind") ||
+                blob.contains("camera") ->
+                CAMERA_START_FAILED
+            else -> CAMERA_ERROR
+        }
+    }
 }
