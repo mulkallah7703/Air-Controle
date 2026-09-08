@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mulkallah.aircontrole.R
+import com.mulkallah.aircontrole.core.permissions.AccessibilitySettingsLauncher
 import com.mulkallah.aircontrole.core.permissions.PermissionChecker
 import com.mulkallah.aircontrole.core.prefs.AirControlePreferences
 import com.mulkallah.aircontrole.ui.theme.AirCyan
@@ -213,9 +214,7 @@ fun OnboardingScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(R.string.action_grant)) }
                 OnboardingPage.Accessibility -> Button(
-                    onClick = {
-                        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-                    },
+                    onClick = { AccessibilitySettingsLauncher.open(context) },
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(R.string.action_open_settings)) }
                 OnboardingPage.Overlay -> Button(

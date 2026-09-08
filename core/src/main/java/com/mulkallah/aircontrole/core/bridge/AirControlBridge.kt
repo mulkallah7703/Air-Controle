@@ -16,11 +16,15 @@ object AirControlBridge {
         fun performBack(): Boolean
         fun performClick(x: Float, y: Float): Boolean
         fun performScroll(direction: ScrollDirection): Boolean
+        fun performSwipe(direction: SwipeDirection): Boolean
+        fun performRecents(): Boolean
         fun openApplication(packageName: String): Boolean
         val connected: Boolean
     }
 
     enum class ScrollDirection { UP, DOWN }
+
+    enum class SwipeDirection { LEFT, RIGHT }
 
     @Volatile
     var actionSink: ActionSink? = null
@@ -37,6 +41,15 @@ object AirControlBridge {
     private val _lastGesture = MutableStateFlow<String?>(null)
     val lastGesture: StateFlow<String?> = _lastGesture.asStateFlow()
 
+    private val _recognitionSeq = MutableStateFlow(0L)
+    val recognitionSeq: StateFlow<Long> = _recognitionSeq.asStateFlow()
+
+    private val _pose = MutableStateFlow("UNKNOWN")
+    val pose: StateFlow<String> = _pose.asStateFlow()
+
+    private val _suppressActions = MutableStateFlow(false)
+    val suppressActions: StateFlow<Boolean> = _suppressActions.asStateFlow()
+
     private val _cursor = MutableStateFlow(CursorPosition(0.5f, 0.5f, visible = false))
     val cursor: StateFlow<CursorPosition> = _cursor.asStateFlow()
 
@@ -48,6 +61,7 @@ object AirControlBridge {
         if (!value) {
             _paused.value = false
             _machineState.value = "IDLE"
+            _pose.value = "UNKNOWN"
             _cursor.value = _cursor.value.copy(visible = false)
         }
     }
@@ -66,6 +80,17 @@ object AirControlBridge {
 
     fun updateLastGesture(gesture: String?) {
         _lastGesture.value = gesture
+        if (gesture != null) {
+            _recognitionSeq.value += 1
+        }
+    }
+
+    fun updatePose(pose: String) {
+        _pose.value = pose
+    }
+
+    fun setSuppressActions(value: Boolean) {
+        _suppressActions.value = value
     }
 
     fun updateCursor(position: CursorPosition) {

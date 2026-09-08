@@ -22,8 +22,9 @@ import com.mulkallah.aircontrole.ui.onboarding.OnboardingScreen
 import com.mulkallah.aircontrole.ui.onboarding.ReadyScreen
 import com.mulkallah.aircontrole.ui.onboarding.WelcomeScreen
 import com.mulkallah.aircontrole.ui.picker.AppPickerScreen
+import com.mulkallah.aircontrole.ui.customize.CustomizeGesturesScreen
 import com.mulkallah.aircontrole.ui.settings.SettingsScreen
-import com.mulkallah.aircontrole.ui.stubs.ComingSoonScreen
+import com.mulkallah.aircontrole.ui.training.GestureTrainingScreen
 
 @Composable
 fun AirControleApp(preferences: AirControlePreferences) {
@@ -98,14 +99,14 @@ fun AirControleApp(preferences: AirControlePreferences) {
                     )
                 }
                 composable(Destinations.Training) {
-                    ComingSoonScreen(
-                        training = true,
+                    GestureTrainingScreen(
+                        preferences = preferences,
                         onBack = { navController.popBackStack() },
                     )
                 }
                 composable(Destinations.Customize) {
-                    ComingSoonScreen(
-                        training = false,
+                    CustomizeGesturesScreen(
+                        preferences = preferences,
                         onBack = { navController.popBackStack() },
                     )
                 }

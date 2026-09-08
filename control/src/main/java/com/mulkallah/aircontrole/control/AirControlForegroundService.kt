@@ -15,6 +15,10 @@ import androidx.core.app.ServiceCompat
 import com.mulkallah.aircontrole.camera.CameraHandTracker
 import com.mulkallah.aircontrole.core.AirControleConstants
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge
+import com.mulkallah.aircontrole.core.gestures.GestureActionRouter
+import com.mulkallah.aircontrole.core.model.CursorPosition
+import com.mulkallah.aircontrole.core.model.GestureAction
+import com.mulkallah.aircontrole.core.model.GestureMappingCatalog
 import com.mulkallah.aircontrole.core.prefs.AirControlePreferences
 import com.mulkallah.aircontrole.gestures.GestureStateMachine
 import com.mulkallah.aircontrole.gestures.GestureType
@@ -35,11 +39,16 @@ class AirControlForegroundService : Service() {
     private var overlay: CursorOverlayController? = null
     private var tracker: CameraHandTracker? = null
     private var startJob: Job? = null
+    @Volatile
+    private var mappings: Map<String, GestureAction> = GestureMappingCatalog.defaults
 
     override fun onCreate() {
         super.onCreate()
         prefs = AirControlePreferences(applicationContext)
         overlay = CursorOverlayController(applicationContext)
+        scope.launch {
+            prefs.gestureActions.collect { mappings = it }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -81,21 +90,23 @@ class AirControlForegroundService : Service() {
             onHand = { frame ->
                 if (AirControlBridge.paused.value && machine.state != com.mulkallah.aircontrole.gestures.GestureState.COOLDOWN) {
                     val result = machine.onFrame(frame)
-                    AirControlBridge.updateCursor(result.cursor)
-                    AirControlBridge.updateMachineState(result.state.name)
+                    publishFrame(result.cursor, result.state.name, result.pose.name, updateOverlay = false)
                     if (result.shouldDispatch && result.recognized == GestureType.PALM_PAUSE) {
-                        AirControlBridge.togglePaused()
-                        overlay?.pulse("pause")
+                        AirControlBridge.updateLastGesture(result.recognized.name)
+                        if (!AirControlBridge.suppressActions.value) {
+                            AirControlBridge.togglePaused()
+                            overlay?.pulse("pause")
+                        }
                     }
                     return@CameraHandTracker
                 }
                 val result = machine.onFrame(frame)
-                AirControlBridge.updateCursor(result.cursor)
-                AirControlBridge.updateMachineState(result.state.name)
-                overlay?.update(result.cursor)
+                publishFrame(result.cursor, result.state.name, result.pose.name, updateOverlay = true)
                 if (result.pulse) {
                     overlay?.pulse(result.recognized.name.lowercase())
-                    AirControlBridge.updateLastGesture(result.recognized.name)
+                    if (result.recognized != GestureType.NONE) {
+                        AirControlBridge.updateLastGesture(result.recognized.name)
+                    }
                 }
                 if (result.shouldDispatch) {
                     dispatch(result.recognized)
@@ -103,9 +114,7 @@ class AirControlForegroundService : Service() {
             },
             onEmpty = { timestamp ->
                 val result = machine.onLostHand(timestamp)
-                AirControlBridge.updateMachineState(result.state.name)
-                AirControlBridge.updateCursor(result.cursor)
-                overlay?.update(result.cursor)
+                publishFrame(result.cursor, result.state.name, result.pose.name, updateOverlay = true)
             },
             onError = { error ->
                 AirControlBridge.updateStatus(error.message ?: "camera_error")
@@ -119,20 +128,32 @@ class AirControlForegroundService : Service() {
         }
     }
 
-    private fun dispatch(gesture: GestureType) {
-        val sink = AirControlBridge.actionSink
-        val cursor = AirControlBridge.cursor.value
-        when (gesture) {
-            GestureType.CLICK -> sink?.performClick(cursor.x, cursor.y)
-            GestureType.SCROLL_UP -> sink?.performScroll(AirControlBridge.ScrollDirection.UP)
-            GestureType.SCROLL_DOWN -> sink?.performScroll(AirControlBridge.ScrollDirection.DOWN)
-            GestureType.SWIPE_LEFT -> sink?.performBack()
-            GestureType.SWIPE_RIGHT -> sink?.performHome()
-            GestureType.FIST_BACK -> sink?.performBack()
-            GestureType.PEACE_HOME -> sink?.performHome()
-            GestureType.PALM_PAUSE -> AirControlBridge.togglePaused()
-            GestureType.POINT_MOVE, GestureType.NONE -> Unit
+    private fun publishFrame(
+        cursor: CursorPosition,
+        state: String,
+        pose: String,
+        updateOverlay: Boolean,
+    ) {
+        val visible = cursor.visible &&
+            GestureMappingCatalog.actionFor(GestureMappingCatalog.POINT_MOVE, mappings) != GestureAction.NONE
+        val published = cursor.copy(visible = visible)
+        AirControlBridge.updateCursor(published)
+        AirControlBridge.updateMachineState(state)
+        AirControlBridge.updatePose(pose)
+        if (updateOverlay) {
+            overlay?.update(published)
         }
+    }
+
+    private fun dispatch(gesture: GestureType) {
+        if (AirControlBridge.suppressActions.value) return
+        val action = GestureMappingCatalog.actionFor(gesture.name, mappings)
+        GestureActionRouter.dispatch(
+            action = action,
+            sink = AirControlBridge.actionSink,
+            cursor = AirControlBridge.cursor.value,
+            onPause = { AirControlBridge.togglePaused() },
+        )
     }
 
     private fun shutdownPipeline() {
