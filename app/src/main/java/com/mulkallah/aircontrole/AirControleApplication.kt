@@ -1,10 +1,8 @@
 package com.mulkallah.aircontrole
 
 import android.app.Application
-import com.mulkallah.aircontrole.control.AirControlForegroundService
 import com.mulkallah.aircontrole.core.AirControleLog
 import com.mulkallah.aircontrole.core.locale.LocaleController
-import com.mulkallah.aircontrole.core.permissions.PermissionChecker
 import com.mulkallah.aircontrole.core.prefs.AirControlePreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,11 +20,9 @@ class AirControleApplication : Application() {
         applicationScope.launch {
             LocaleController.apply(preferences.languageTag.first())
             val enabled = preferences.airControlEnabled.first()
-            val ready = PermissionChecker.snapshot(this@AirControleApplication).readyForAirControl
-            AirControleLog.i("app start enabled=$enabled ready=$ready")
-            if (enabled && ready) {
-                AirControlForegroundService.start(this@AirControleApplication)
-            }
+            AirControleLog.i(
+                "app start enabled=$enabled — camera FGS starts from MainActivity/Home, not Application",
+            )
         }
     }
 

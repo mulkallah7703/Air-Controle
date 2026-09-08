@@ -63,6 +63,8 @@ fun pipelineErrorRes(status: String): Int? = when (status) {
     "camera_no_frames" -> R.string.home_error_camera_no_frames
     "camera_permission" -> R.string.home_error_camera_permission
     "overlay_failed" -> R.string.home_error_overlay
+    "service_start_failed" -> R.string.home_error_service_start
+    "service_not_running" -> R.string.home_error_service_not_running
     else -> null
 }
 

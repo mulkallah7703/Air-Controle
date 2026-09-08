@@ -18,6 +18,8 @@ object PipelineStatus {
     const val CAMERA_NO_FRAMES = "camera_no_frames"
     const val CAMERA_PERMISSION = "camera_permission"
     const val OVERLAY_FAILED = "overlay_failed"
+    const val SERVICE_START_FAILED = "service_start_failed"
+    const val SERVICE_NOT_RUNNING = "service_not_running"
 
     val errors: Set<String> = setOf(
         MODEL_MISSING,
@@ -27,6 +29,8 @@ object PipelineStatus {
         CAMERA_NO_FRAMES,
         CAMERA_PERMISSION,
         OVERLAY_FAILED,
+        SERVICE_START_FAILED,
+        SERVICE_NOT_RUNNING,
     )
 
     fun isError(status: String): Boolean = status in errors

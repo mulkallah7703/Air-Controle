@@ -20,5 +20,7 @@ class PipelineStatusTest {
         assertTrue(PipelineStatus.isError(PipelineStatus.LANDMARKER_FAILED))
         assertTrue(PipelineStatus.isError(PipelineStatus.CAMERA_NO_FRAMES))
         assertTrue(PipelineStatus.isError(PipelineStatus.OVERLAY_FAILED))
+        assertTrue(PipelineStatus.isError(PipelineStatus.SERVICE_START_FAILED))
+        assertTrue(PipelineStatus.isError(PipelineStatus.SERVICE_NOT_RUNNING))
     }
 }

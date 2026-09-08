@@ -36,6 +36,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 class AirControlForegroundService : LifecycleService() {
 
@@ -49,29 +50,35 @@ class AirControlForegroundService : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
-        AirControleLog.i("service onCreate")
+        isStarted = true
+        AirControleLog.i("service onCreate pid=${android.os.Process.myPid()}")
         prefs = AirControlePreferences(applicationContext)
         overlay = CursorOverlayController(applicationContext)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        val accessibilitySetting = PermissionChecker.enabledAccessibilityServicesSetting(this)
-        AirControleLog.i(
-            "service start action=${intent?.action} " +
-                "accessibilitySetting=${accessibilitySetting ?: "null"} " +
-                "accessibilityReady=${EnabledAccessibilityServices.isAirControleEnabled(accessibilitySetting)} " +
-                "accessibilityConnected=${AirControlBridge.accessibilityConnected}",
-        )
         when (intent?.action) {
             AirControleConstants.ACTION_STOP, AirControleConstants.ACTION_KILL_SWITCH -> {
+                AirControleLog.i("service stop action=${intent.action}")
                 scope.launch { prefs.setAirControlEnabled(false) }
                 shutdownAndStop()
                 return START_NOT_STICKY
             }
         }
-        startInForeground()
+        if (!startInForeground()) {
+            AirControlBridge.updateStatus(PipelineStatus.SERVICE_START_FAILED)
+            stopSelf()
+            return START_NOT_STICKY
+        }
         acquireWakeLock()
+        val accessibilitySetting = PermissionChecker.enabledAccessibilityServicesSetting(this)
+        AirControleLog.i(
+            "service onStartCommand action=${intent?.action} " +
+                "accessibilitySetting=${accessibilitySetting ?: "null"} " +
+                "accessibilityReady=${EnabledAccessibilityServices.isAirControleEnabled(accessibilitySetting)} " +
+                "accessibilityConnected=${AirControlBridge.accessibilityConnected}",
+        )
         startJob?.cancel()
         startJob = scope.launch { startPipeline() }
         return START_STICKY
@@ -79,6 +86,7 @@ class AirControlForegroundService : LifecycleService() {
 
     override fun onDestroy() {
         AirControleLog.i("service onDestroy")
+        isStarted = false
         shutdownPipeline()
         scope.cancel()
         super.onDestroy()
@@ -92,8 +100,9 @@ class AirControlForegroundService : LifecycleService() {
         if (overlay == null) {
             overlay = CursorOverlayController(applicationContext)
         }
-        val size = prefs.cursorSize.first()
-        val pulse = prefs.cursorPulse.first()
+        val size = withTimeoutOrNull(400L) { prefs.cursorSize.first() } ?: 1f
+        val pulse = withTimeoutOrNull(400L) { prefs.cursorPulse.first() } ?: true
+        AirControleLog.i("pipeline starting overlay=$overlay cursorSize=$size")
         val overlayShown = overlay?.show(size, pulse) == true
         if (!overlayShown) {
             AirControleLog.e("overlay failed to attach")
@@ -266,7 +275,7 @@ class AirControlForegroundService : LifecycleService() {
         wakeLock = null
     }
 
-    private fun startInForeground() {
+    private fun startInForeground(): Boolean {
         ensureChannel()
         val launch = packageManager.getLaunchIntentForPackage(packageName)
         val content = PendingIntent.getActivity(
@@ -290,17 +299,23 @@ class AirControlForegroundService : LifecycleService() {
             .addAction(0, getString(R.string.air_control_notification_stop), stopIntent)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ServiceCompat.startForeground(
-                this,
-                AirControleConstants.NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA,
-            )
-        } else {
-            startForeground(AirControleConstants.NOTIFICATION_ID, notification)
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceCompat.startForeground(
+                    this,
+                    AirControleConstants.NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA,
+                )
+            } else {
+                startForeground(AirControleConstants.NOTIFICATION_ID, notification)
+            }
+            AirControleLog.i("foreground started type=camera")
+            true
+        } catch (error: Throwable) {
+            AirControleLog.e("startForeground CAMERA failed", error)
+            false
         }
-        AirControleLog.i("foreground started type=camera")
     }
 
     private fun ensureChannel() {
@@ -318,18 +333,21 @@ class AirControlForegroundService : LifecycleService() {
     }
 
     companion object {
-        fun start(context: Context) {
-            AirControleLog.i("service start requested")
-            val intent = Intent(context, AirControlForegroundService::class.java)
-                .setAction(AirControleConstants.ACTION_START)
-            ContextCompatStart.start(context, intent)
-        }
+        @Volatile
+        var isStarted: Boolean = false
+            private set
+
+        fun start(context: Context): Boolean = AirControlStarter.start(context)
 
         fun stop(context: Context) {
             AirControleLog.i("service stop requested")
             val intent = Intent(context, AirControlForegroundService::class.java)
                 .setAction(AirControleConstants.ACTION_STOP)
-            context.startService(intent)
+            try {
+                context.startService(intent)
+            } catch (error: Throwable) {
+                AirControleLog.e("service stop dispatch failed", error)
+            }
         }
     }
 }
@@ -347,8 +365,3 @@ private fun pipelineErrorToken(error: Throwable): String {
     }
 }
 
-private object ContextCompatStart {
-    fun start(context: Context, intent: Intent) {
-        androidx.core.content.ContextCompat.startForegroundService(context, intent)
-    }
-}

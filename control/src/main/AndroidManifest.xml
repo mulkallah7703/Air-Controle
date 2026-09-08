@@ -11,6 +11,7 @@
         <service
             android:name="com.mulkallah.aircontrole.control.AirControlForegroundService"
             android:exported="false"
-            android:foregroundServiceType="camera" />
+            android:foregroundServiceType="camera"
+            android:stopWithTask="false" />
     </application>
 </manifest>

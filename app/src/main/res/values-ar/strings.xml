@@ -58,6 +58,8 @@
     <string name="home_error_camera_no_frames">ارتبطت الكاميرا لكنها لم ترسل إطارات. على سامسونج: الإعدادات → التطبيقات → Air Controle → البطارية → غير مقيّد. ثم اضغط إعادة المحاولة.</string>
     <string name="home_error_camera_permission">فُقد إذن الكاميرا. اسمح بالكاميرا ثم اضغط إعادة المحاولة.</string>
     <string name="home_error_overlay">تعذّر إظهار طبقة المؤشر الأبيض. اسمح بـ «الظهور فوق التطبيقات» ثم اضغط إعادة المحاولة.</string>
+    <string name="home_error_service_start">لم تبدأ خدمة كاميرا Air Control. اضغط لإعادة المحاولة وهذه الشاشة مفتوحة. أبقِ إشعار Air Controle ظاهرًا.</string>
+    <string name="home_error_service_not_running">Air Control يعمل في التطبيق لكن خدمة الكاميرا غير شغّالة، لذلك لا يوجد مؤشر. اضغط لتشغيلها الآن.</string>
     <string name="home_battery_hint">قد يوقف سامسونج الكاميرا في الخلفية. اضبط استخدام بطارية Air Controle على غير مقيّد حتى يستمر المؤشر.</string>
     <string name="home_battery_cta">فتح إعدادات البطارية</string>
     <string name="home_settings">الإعدادات</string>

@@ -58,6 +58,8 @@
     <string name="home_error_camera_no_frames">The camera bound but sent no frames. On Samsung: Settings → Apps → Air Controle → Battery → Unrestricted. Then tap retry.</string>
     <string name="home_error_camera_permission">Camera permission was lost. Allow Camera, then tap retry.</string>
     <string name="home_error_overlay">The white cursor overlay could not be shown. Allow “Display over other apps”, then tap retry.</string>
+    <string name="home_error_service_start">Air Control’s camera service did not start. Tap to retry while this screen is open. Keep the Air Controle notification visible.</string>
+    <string name="home_error_service_not_running">Air Control is ON in the app but the camera service is not running, so there is no cursor. Tap to start it now.</string>
     <string name="home_battery_hint">Samsung may pause the camera in the background. Set Air Controle battery usage to Unrestricted so the cursor keeps working.</string>
     <string name="home_battery_cta">Open battery settings</string>
     <string name="home_settings">Settings</string>

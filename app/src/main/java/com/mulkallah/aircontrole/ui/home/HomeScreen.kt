@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,6 +67,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mulkallah.aircontrole.R
 import com.mulkallah.aircontrole.control.AirControlForegroundService
+import com.mulkallah.aircontrole.control.AirControlStarter
+import com.mulkallah.aircontrole.core.AirControleLog
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge
 import com.mulkallah.aircontrole.core.model.PipelineStatus
 import com.mulkallah.aircontrole.core.model.QuickAccessApp
@@ -80,6 +83,7 @@ import com.mulkallah.aircontrole.ui.theme.AirCyan
 import com.mulkallah.aircontrole.ui.theme.AirDanger
 import com.mulkallah.aircontrole.ui.theme.AirNavy
 import com.mulkallah.aircontrole.ui.theme.AirOk
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private data class QuickAccessVisual(
@@ -107,17 +111,29 @@ fun HomeScreen(
     val pipelineStatus by AirControlBridge.statusMessage.collectAsState()
     var permissions by remember { mutableStateOf(PermissionChecker.snapshot(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, enabled, running) {
+    DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 permissions = PermissionChecker.snapshot(context)
-                if (enabled && permissions.readyForAirControl && !running) {
-                    AirControlForegroundService.start(context)
-                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(enabled) {
+        if (!enabled) return@LaunchedEffect
+        AirControleLog.i("Home Air Control ON — ensuring camera FGS")
+        AirControlStarter.start(context)
+        delay(1_500L)
+        if (!AirControlForegroundService.isStarted && !AirControlBridge.running.value) {
+            AirControleLog.w("Home watchdog: FGS still down, retrying")
+            AirControlStarter.start(context)
+            delay(1_500L)
+        }
+        if (!AirControlForegroundService.isStarted && !AirControlBridge.running.value) {
+            AirControleLog.e("Home watchdog: camera FGS is not running")
+            AirControlBridge.updateStatus(PipelineStatus.SERVICE_NOT_RUNNING)
+        }
     }
     DisposableEffect(context) {
         val resolver = context.contentResolver
@@ -191,7 +207,7 @@ fun HomeScreen(
                         Switch(
                             checked = on,
                             onCheckedChange = { checked ->
-                                if (checked && !permissions.readyForAirControl) {
+                                if (checked && !permissions.camera) {
                                     Toast.makeText(
                                         context,
                                         context.getString(R.string.home_missing_permissions),
@@ -199,14 +215,12 @@ fun HomeScreen(
                                     ).show()
                                     return@Switch
                                 }
-                                scope.launch {
-                                    preferences.setAirControlEnabled(checked)
-                                    if (checked) {
-                                        AirControlForegroundService.start(context)
-                                    } else {
-                                        AirControlForegroundService.stop(context)
-                                    }
+                                if (checked) {
+                                    AirControlStarter.start(context)
+                                } else {
+                                    AirControlStarter.stop(context)
                                 }
+                                scope.launch { preferences.setAirControlEnabled(checked) }
                             },
                         )
                     }
@@ -253,10 +267,8 @@ fun HomeScreen(
                         PipelineErrorCard(
                             message = stringResource(errorRes),
                             onRetry = {
-                                scope.launch {
-                                    preferences.setAirControlEnabled(true)
-                                    AirControlForegroundService.start(context)
-                                }
+                                scope.launch { preferences.setAirControlEnabled(true) }
+                                AirControlStarter.start(context)
                             },
                         )
                     }
