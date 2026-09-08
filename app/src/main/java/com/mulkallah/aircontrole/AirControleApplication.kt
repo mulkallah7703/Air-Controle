@@ -1,6 +1,7 @@
 package com.mulkallah.aircontrole
 
 import android.app.Application
+import com.mulkallah.aircontrole.core.AirControleLog
 import com.mulkallah.aircontrole.core.locale.LocaleController
 import com.mulkallah.aircontrole.core.prefs.AirControlePreferences
 import kotlinx.coroutines.CoroutineScope
@@ -18,6 +19,10 @@ class AirControleApplication : Application() {
         instance = this
         applicationScope.launch {
             LocaleController.apply(preferences.languageTag.first())
+            val enabled = preferences.airControlEnabled.first()
+            AirControleLog.i(
+                "app start enabled=$enabled — camera FGS starts from MainActivity/Home, not Application",
+            )
         }
     }
 

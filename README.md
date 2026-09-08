@@ -65,7 +65,45 @@ Requirements:
 ./gradlew :gestures:test
 ```
 
+`assembleDebug` downloads Google’s MediaPipe Hands model (`hand_landmarker.task`) into `:camera` assets if it is not already there. You can also run `./scripts/download-hand-landmarker.sh`.
+
 Install the debug APK from `app/build/outputs/apk/debug/` or use **Run** in Android Studio. For sideload testing, prefer the **release-signed** APK from `app/build/outputs/apk/release/` (see signing below).
+
+### Verify on a phone (logcat `AirControle`)
+
+On a physical device (Samsung SM-S928B or similar):
+
+1. Allow Camera, Overlay, Notifications, then turn on **Air Controle** in system Accessibility settings (Home Ready is false until this is really on).
+2. Confirm with `adb shell settings get secure enabled_accessibility_services` — it must contain  
+   `com.mulkallah.aircontrole/com.mulkallah.aircontrole.accessibility.AirControleAccessibilityService`  
+   (`null` means the Home checklist must show Accessibility as **Needed**, never Ready).
+3. On Samsung set **Settings → Apps → Air Controle → Battery → Unrestricted**.
+4. Turn **Air Control ON** on Home. Raise an open palm in front of the front camera.
+5. Home status must leave **Idle / خامل** for **Hand detected / Tracking**, and a white cursor must appear.
+6. Fist = Back, peace ✌️ = Home, pinch = click at the cursor — only after Accessibility is actually enabled.
+
+```bash
+adb logcat -s AirControle:I
+```
+
+Healthy start looks like:
+
+```
+service start requested
+service start action=… accessibilitySetting=… accessibilityReady=true|false
+foreground started type=camera
+wake lock acquired
+landmarker ready model=hand_landmarker.task delegate=CPU
+selecting front camera rotation=…
+camera bound selector=front
+pipeline camera bound landmarker ready
+frame rate ~N/s lastLandmarks=21
+state IDLE -> HAND_DETECTED
+session start …
+action dispatched gesture=FIST_BACK action=BACK accessibility=true connected=true result=true
+```
+
+If Home stays Idle, the same tag reports the failure (`model_missing`, `landmarker create failed`, `no camera frames after 4s`, `overlay attach failed`) and Home shows an Arabic error with retry / battery guidance.
 
 Open the project as **Air Controle** (`settings.gradle.kts` `rootProject.name`).
 

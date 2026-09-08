@@ -25,3 +25,4 @@ app/release
 *.orig
 .vscode
 .claude
+camera/src/main/assets/*.task

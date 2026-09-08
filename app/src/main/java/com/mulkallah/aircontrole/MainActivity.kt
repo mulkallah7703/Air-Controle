@@ -8,7 +8,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.lifecycleScope
+import com.mulkallah.aircontrole.control.AirControlStarter
+import com.mulkallah.aircontrole.core.AirControleLog
 import com.mulkallah.aircontrole.core.locale.LocaleController
+import com.mulkallah.aircontrole.core.permissions.PermissionChecker
 import com.mulkallah.aircontrole.ui.AirControleApp
 import com.mulkallah.aircontrole.ui.theme.AirControleTheme
 import kotlinx.coroutines.flow.first
@@ -34,6 +37,19 @@ class MainActivity : AppCompatActivity() {
             val language by prefs.languageTag.collectAsState(initial = "ar")
             AirControleTheme(rtl = LocaleController.isRtl(language)) {
                 AirControleApp(preferences = prefs)
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val prefs = (application as AirControleApplication).preferences
+        lifecycleScope.launch {
+            val enabled = prefs.airControlEnabled.first()
+            val camera = PermissionChecker.hasCamera(this@MainActivity)
+            AirControleLog.i("activity onStart enabled=$enabled camera=$camera")
+            if (enabled && camera) {
+                AirControlStarter.start(this@MainActivity)
             }
         }
     }

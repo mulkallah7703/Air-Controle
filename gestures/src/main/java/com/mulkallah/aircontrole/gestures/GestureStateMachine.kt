@@ -59,7 +59,7 @@ class GestureStateMachine(
     fun onFrame(frame: HandFrame): GestureFrameResult {
         lastSeenMs = frame.timestampMs
         val classification = classifier.classify(frame)
-        updateCursor(classification)
+        updateCursor(classification, handPresent = frame.isValid)
 
         if (state == GestureState.COOLDOWN) {
             if (frame.timestampMs - enteredStateMs >= cooldownMs) {
@@ -86,8 +86,9 @@ class GestureStateMachine(
 
         when (state) {
             GestureState.IDLE -> {
-                if (classification.pose != HandPose.UNKNOWN) {
+                if (frame.isValid) {
                     enter(GestureState.HAND_DETECTED, frame.timestampMs)
+                    holdPose = classification.pose
                     rememberTip(classification, frame.timestampMs)
                     return currentResult(
                         shouldDispatch = false,
@@ -98,7 +99,7 @@ class GestureStateMachine(
                 }
             }
             GestureState.HAND_DETECTED -> {
-                if (classification.pose == HandPose.UNKNOWN) {
+                if (!frame.isValid) {
                     enter(GestureState.IDLE, frame.timestampMs)
                     sessionAnnounced = false
                 } else if (frame.timestampMs - enteredStateMs >= detectHoldMs) {
@@ -188,14 +189,13 @@ class GestureStateMachine(
         return dominantSwipe(vx, vy, swipeSpeed)
     }
 
-    private fun updateCursor(classification: GestureClassifier.Classification) {
-        val visible = classification.pose != HandPose.UNKNOWN
+    private fun updateCursor(classification: GestureClassifier.Classification, handPresent: Boolean) {
         // Front camera is mirrored so a rightward finger move matches screen space.
         val mirroredX = 1f - classification.fingertip.x
         cursor = CursorPosition(
             x = mirroredX.coerceIn(0f, 1f),
             y = classification.fingertip.y.coerceIn(0f, 1f),
-            visible = visible,
+            visible = handPresent,
         )
     }
 

@@ -20,8 +20,8 @@ android {
         applicationId = "com.mulkallah.aircontrole"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.2.1"
+        versionCode = 8
+        versionName = "0.2.5"
         vectorDrawables.useSupportLibrary = true
     }
 

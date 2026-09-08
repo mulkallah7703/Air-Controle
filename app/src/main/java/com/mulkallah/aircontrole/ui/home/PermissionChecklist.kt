@@ -67,6 +67,7 @@ fun PermissionChecklist(
                 icon = Icons.Outlined.AccessibilityNew,
                 label = stringResource(R.string.perm_accessibility),
                 granted = permissions.accessibility,
+                offLabel = stringResource(R.string.perm_status_accessibility_off),
                 onClick = { AccessibilitySettingsLauncher.open(context) },
             )
             PermissionRow(
@@ -97,6 +98,7 @@ private fun PermissionRow(
     label: String,
     granted: Boolean,
     onClick: () -> Unit,
+    offLabel: String? = null,
 ) {
     Row(
         modifier = Modifier
@@ -110,7 +112,11 @@ private fun PermissionRow(
         Column(Modifier.weight(1f)) {
             Text(label, style = MaterialTheme.typography.bodyLarge)
             Text(
-                text = stringResource(if (granted) R.string.perm_status_on else R.string.perm_status_off),
+                text = when {
+                    granted -> stringResource(R.string.perm_status_on)
+                    offLabel != null -> offLabel
+                    else -> stringResource(R.string.perm_status_off)
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (granted) AirOk else MaterialTheme.colorScheme.onSurfaceVariant,
             )

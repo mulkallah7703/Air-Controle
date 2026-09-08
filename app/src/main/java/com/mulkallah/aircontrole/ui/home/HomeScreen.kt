@@ -2,7 +2,11 @@ package com.mulkallah.aircontrole.ui.home
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.graphics.drawable.Drawable
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,17 +67,23 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.mulkallah.aircontrole.R
 import com.mulkallah.aircontrole.control.AirControlForegroundService
+import com.mulkallah.aircontrole.control.AirControlStarter
+import com.mulkallah.aircontrole.core.AirControleLog
 import com.mulkallah.aircontrole.core.bridge.AirControlBridge
+import com.mulkallah.aircontrole.core.model.PipelineStatus
 import com.mulkallah.aircontrole.core.model.QuickAccessApp
 import com.mulkallah.aircontrole.core.permissions.AccessibilitySettingsLauncher
 import com.mulkallah.aircontrole.core.permissions.PermissionChecker
+import com.mulkallah.aircontrole.core.permissions.PermissionSettingsLauncher
 import com.mulkallah.aircontrole.core.prefs.AirControlePreferences
 import com.mulkallah.aircontrole.ui.gestures.gestureShortRes
 import com.mulkallah.aircontrole.ui.gestures.machineStateRes
+import com.mulkallah.aircontrole.ui.gestures.pipelineErrorRes
 import com.mulkallah.aircontrole.ui.theme.AirCyan
 import com.mulkallah.aircontrole.ui.theme.AirDanger
 import com.mulkallah.aircontrole.ui.theme.AirNavy
 import com.mulkallah.aircontrole.ui.theme.AirOk
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private data class QuickAccessVisual(
@@ -97,6 +108,7 @@ fun HomeScreen(
     val paused by AirControlBridge.paused.collectAsState()
     val machine by AirControlBridge.machineState.collectAsState()
     val lastGesture by AirControlBridge.lastGesture.collectAsState()
+    val pipelineStatus by AirControlBridge.statusMessage.collectAsState()
     var permissions by remember { mutableStateOf(PermissionChecker.snapshot(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -107,6 +119,35 @@ fun HomeScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(enabled) {
+        if (!enabled) return@LaunchedEffect
+        AirControleLog.i("Home Air Control ON — ensuring camera FGS")
+        AirControlStarter.start(context)
+        delay(1_500L)
+        if (!AirControlForegroundService.isStarted && !AirControlBridge.running.value) {
+            AirControleLog.w("Home watchdog: FGS still down, retrying")
+            AirControlStarter.start(context)
+            delay(1_500L)
+        }
+        if (!AirControlForegroundService.isStarted && !AirControlBridge.running.value) {
+            AirControleLog.e("Home watchdog: camera FGS is not running")
+            AirControlBridge.updateStatus(PipelineStatus.SERVICE_NOT_RUNNING)
+        }
+    }
+    DisposableEffect(context) {
+        val resolver = context.contentResolver
+        val settingsObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                permissions = PermissionChecker.snapshot(context)
+            }
+        }
+        resolver.registerContentObserver(
+            Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
+            false,
+            settingsObserver,
+        )
+        onDispose { resolver.unregisterContentObserver(settingsObserver) }
     }
 
     val apps = remember(extras) { preferences.resolveQuickAccess(extras) }
@@ -166,7 +207,7 @@ fun HomeScreen(
                         Switch(
                             checked = on,
                             onCheckedChange = { checked ->
-                                if (checked && !permissions.readyForAirControl) {
+                                if (checked && !permissions.camera) {
                                     Toast.makeText(
                                         context,
                                         context.getString(R.string.home_missing_permissions),
@@ -174,14 +215,12 @@ fun HomeScreen(
                                     ).show()
                                     return@Switch
                                 }
-                                scope.launch {
-                                    preferences.setAirControlEnabled(checked)
-                                    if (checked) {
-                                        AirControlForegroundService.start(context)
-                                    } else {
-                                        AirControlForegroundService.stop(context)
-                                    }
+                                if (checked) {
+                                    AirControlStarter.start(context)
+                                } else {
+                                    AirControlStarter.stop(context)
                                 }
+                                scope.launch { preferences.setAirControlEnabled(checked) }
                             },
                         )
                     }
@@ -190,6 +229,18 @@ fun HomeScreen(
                         text = "${stringResource(R.string.home_status)} · ${stringResource(machineStateRes(machine))}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(
+                            if (permissions.accessibility) {
+                                R.string.home_status_accessibility_on
+                            } else {
+                                R.string.home_status_accessibility_off
+                            },
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (permissions.accessibility) AirOk else AirDanger,
+                        modifier = Modifier.clickable { AccessibilitySettingsLauncher.open(context) },
                     )
                     if (on && tracking && !paused) {
                         Spacer(Modifier.height(8.dp))
@@ -200,6 +251,25 @@ fun HomeScreen(
                             text = "${stringResource(R.string.home_last_gesture)} · ${stringResource(gestureShortRes(gesture))}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = AirCyan,
+                        )
+                    }
+                    if (on && !tracking && !paused && !PipelineStatus.isError(pipelineStatus)) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.home_waiting_hand),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AirCyan,
+                        )
+                    }
+                    val errorRes = pipelineErrorRes(pipelineStatus)
+                    if (on && errorRes != null) {
+                        Spacer(Modifier.height(12.dp))
+                        PipelineErrorCard(
+                            message = stringResource(errorRes),
+                            onRetry = {
+                                scope.launch { preferences.setAirControlEnabled(true) }
+                                AirControlStarter.start(context)
+                            },
                         )
                     }
                     if (!permissions.accessibility) {
@@ -213,6 +283,18 @@ fun HomeScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.home_battery_hint),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.clickable {
+                                PermissionSettingsLauncher.openBatteryOptimization(context)
+                            },
+                        )
+                        TextButton(onClick = { PermissionSettingsLauncher.openBatteryOptimization(context) }) {
+                            Text(stringResource(R.string.home_battery_cta))
+                        }
                     }
                 }
             }
@@ -344,6 +426,31 @@ private fun QuickAccessTile(
 }
 
 @Composable
+private fun PipelineErrorCard(message: String, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AirDanger.copy(alpha = 0.12f))
+            .clickable(onClick = onRetry)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.home_pipeline_error_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = AirDanger,
+        )
+        Text(text = message, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = stringResource(R.string.home_pipeline_retry),
+            style = MaterialTheme.typography.labelLarge,
+            color = AirCyan,
+        )
+    }
+}
+
+@Composable
 private fun AccessibilityWarning(onClick: () -> Unit) {
     Row(
         modifier = Modifier
@@ -358,7 +465,7 @@ private fun AccessibilityWarning(onClick: () -> Unit) {
         Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = AirDanger)
         Column(Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.home_accessibility_hint),
+                text = stringResource(R.string.home_status_accessibility_off),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(4.dp))

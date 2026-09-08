@@ -43,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mulkallah.aircontrole.R
 import com.mulkallah.aircontrole.core.model.GestureMappingCatalog
+import com.mulkallah.aircontrole.ui.gestures.gestureEmoji
 import com.mulkallah.aircontrole.ui.gestures.gestureGuideBodyRes
 import com.mulkallah.aircontrole.ui.gestures.gestureTitleRes
 import com.mulkallah.aircontrole.ui.theme.AirCyan
@@ -78,6 +79,7 @@ fun GestureGuideScreen(onBack: () -> Unit) {
             )
             GestureMappingCatalog.guideKeys.forEach { key ->
                 GuideRow(
+                    emoji = gestureEmoji(key),
                     icon = gestureIcon(key),
                     title = stringResource(gestureTitleRes(key)),
                     body = stringResource(gestureGuideBodyRes(key)),
@@ -89,6 +91,7 @@ fun GestureGuideScreen(onBack: () -> Unit) {
 
 @Composable
 private fun GuideRow(
+    emoji: String,
     icon: ImageVector,
     title: String,
     body: String,
@@ -109,10 +112,16 @@ private fun GuideRow(
                     .background(AirCyan.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = title, tint = AirCyan, modifier = Modifier.size(28.dp))
+                Text(text = emoji, style = MaterialTheme.typography.headlineSmall)
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(icon, contentDescription = null, tint = AirCyan, modifier = Modifier.size(20.dp))
+                    Text(title, style = MaterialTheme.typography.titleMedium)
+                }
                 Text(
                     text = body,
                     style = MaterialTheme.typography.bodyLarge,

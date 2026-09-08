@@ -60,10 +60,17 @@ object AirControlBridge {
         _running.value = value
         if (!value) {
             _paused.value = false
+            _suppressActions.value = false
             _machineState.value = "IDLE"
             _pose.value = "UNKNOWN"
             _cursor.value = _cursor.value.copy(visible = false)
         }
+    }
+
+    fun resetSessionFlags() {
+        _paused.value = false
+        _suppressActions.value = false
+        _lastGesture.value = null
     }
 
     fun setPaused(value: Boolean) {

@@ -8,5 +8,5 @@ data class PermissionSnapshot(
 ) {
     val allGranted: Boolean get() = camera && accessibility && overlay && notifications
 
-    val readyForAirControl: Boolean get() = camera && overlay
+    val readyForAirControl: Boolean get() = camera
 }

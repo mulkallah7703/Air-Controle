@@ -1,24 +1,34 @@
 package com.mulkallah.aircontrole.core.permissions
 
 import android.Manifest
-import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
-import android.view.accessibility.AccessibilityManager
 import androidx.core.content.ContextCompat
-import com.mulkallah.aircontrole.core.AirControleConstants
+import com.mulkallah.aircontrole.core.AirControleLog
+import com.mulkallah.aircontrole.core.bridge.AirControlBridge
 import com.mulkallah.aircontrole.core.model.PermissionSnapshot
 
 object PermissionChecker {
     fun snapshot(context: Context): PermissionSnapshot {
-        return PermissionSnapshot(
+        val rawAccessibility = enabledAccessibilityServicesSetting(context)
+        val accessibility = EnabledAccessibilityServices.isAirControleEnabled(rawAccessibility)
+        val snapshot = PermissionSnapshot(
             camera = hasCamera(context),
-            accessibility = hasAccessibility(context),
+            accessibility = accessibility,
             overlay = hasOverlay(context),
             notifications = hasNotifications(context),
         )
+        AirControleLog.i(
+            "permissions camera=${snapshot.camera} overlay=${snapshot.overlay} " +
+                "notifications=${snapshot.notifications} " +
+                "accessibilityReady=${snapshot.accessibility} " +
+                "accessibilitySetting=${rawAccessibility ?: "null"} " +
+                "accessibilityConnected=${AirControlBridge.accessibilityConnected} " +
+                "expected=${EnabledAccessibilityServices.flattened}",
+        )
+        return snapshot
     }
 
     fun hasCamera(context: Context): Boolean {
@@ -39,16 +49,15 @@ object PermissionChecker {
     }
 
     fun hasAccessibility(context: Context): Boolean {
-        val manager = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
-            ?: return false
-        val enabled = manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_GENERIC)
-        val expected = "${AirControleConstants.APPLICATION_ID}/${AirControleConstants.ACCESSIBILITY_SERVICE_CLASS}"
-        val shortExpected = AirControleConstants.ACCESSIBILITY_SERVICE_CLASS
-        return enabled.any { info ->
-            val id = info.resolveInfo?.serviceInfo?.let { service ->
-                "${service.packageName}/${service.name}"
-            } ?: info.id
-            id == expected || id.endsWith(shortExpected) || info.id.contains("AirControleAccessibilityService")
-        }
+        return EnabledAccessibilityServices.isAirControleEnabled(
+            enabledAccessibilityServicesSetting(context),
+        )
+    }
+
+    fun enabledAccessibilityServicesSetting(context: Context): String? {
+        return Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+        )
     }
 }

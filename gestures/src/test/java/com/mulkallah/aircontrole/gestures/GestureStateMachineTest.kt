@@ -81,6 +81,21 @@ class GestureStateMachineTest {
     }
 
     @Test
+    fun anyValidHandLeavesIdleEvenWhenPoseIsUnknown() {
+        val machine = GestureStateMachine(detectHoldMs = 40L)
+        val mixed = baseLandmarks(index = true, middle = true, ring = true, pinky = false)
+        val frame = HandFrame(mixed, 0L)
+        assertEquals(HandPose.UNKNOWN, GestureClassifier().classify(frame).pose)
+        val first = machine.onFrame(frame)
+        assertEquals(GestureState.HAND_DETECTED, first.state)
+        assertTrue(first.cursor.visible)
+        assertTrue(first.sessionStart)
+        val tracking = machine.onFrame(frame.copy(timestampMs = 50L))
+        assertEquals(GestureState.TRACKING, tracking.state)
+        assertTrue(tracking.cursor.visible)
+    }
+
+    @Test
     fun lostHandReturnsToIdleAfterTimeout() {
         val machine = GestureStateMachine(detectHoldMs = 10L, lostHandTimeoutMs = 100L)
         val frame = HandFrame(baseLandmarks(true, false, false, false), 0L)
